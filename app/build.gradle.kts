@@ -5,7 +5,7 @@ plugins {
 }
 
 android {
-    namespace = "br.edu.ifpb.unipass_student_app"
+    namespace = "br.edu.ifpb.unipass"
     compileSdk {
         version = release(36)
     }

@@ -1,4 +1,4 @@
-package br.edu.ifpb.unipass_student_app.navigation
+package br.edu.ifpb.unipass.navigation
 
 object Routes {
     const val LOGIN = "login"

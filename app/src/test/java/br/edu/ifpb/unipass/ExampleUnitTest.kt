@@ -1,4 +1,4 @@
-package br.edu.ifpb.unipass_student_app
+package br.edu.ifpb.unipass
 
 import org.junit.Test
 
