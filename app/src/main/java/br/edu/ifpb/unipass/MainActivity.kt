@@ -3,34 +3,22 @@ package br.edu.ifpb.unipass
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 import br.edu.ifpb.unipass.navigation.AppNavHost
-//import br.edu.ifpb.unipass_student_app.ui.theme.UnipassstudentappTheme
+import br.edu.ifpb.unipass.ui.theme.UnipassTheme
+
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        //enableEdgeToEdge()
+
+        enableEdgeToEdge()
+
         setContent {
-            UnipassstudentappTheme {
+            UnipassTheme {
                 AppNavHost()
                 }
             }
         }
     }
-}
 
-//@Composable
-//fun Greeting(name: String, modifier: Modifier = Modifier) {
-//    Text(
-//        text = "Hello $name!",
-//        modifier = modifier
-//    )
-//}
-//
-//@Preview(showBackground = true)
-//@Composable
-//fun GreetingPreview() {
-//    UnipassstudentappTheme {
-//        Greeting("Android")
-//    }
-//}
