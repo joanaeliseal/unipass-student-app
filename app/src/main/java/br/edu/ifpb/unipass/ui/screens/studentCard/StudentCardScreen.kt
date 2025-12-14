@@ -1,4 +1,4 @@
-package br.edu.ifpb.unipass.ui.screens.carteirinha
+package br.edu.ifpb.unipass.ui.screens.studentCard
 
 import androidx.compose.runtime.Composable
 import androidx.navigation.NavController
