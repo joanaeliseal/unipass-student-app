@@ -25,12 +25,10 @@ import br.edu.ifpb.unipass.ui.components.NextTripCard
 import br.edu.ifpb.unipass.ui.components.QuickAccessGrid
 import br.edu.ifpb.unipass.ui.components.RealTimeMapSection
 import br.edu.ifpb.unipass.ui.components.UserProfileHeader
-import kotlinx.coroutines.launch
 
 @Composable
 fun HomeScreen(navController: NavController, modifier: Modifier = Modifier) {
     val repository = remember { TripRepository() }
-    val scope = rememberCoroutineScope()
 
     val currentUser = User(
         name = "Maria",
@@ -41,16 +39,19 @@ fun HomeScreen(navController: NavController, modifier: Modifier = Modifier) {
     var nextTrip by remember { mutableStateOf<Trip?>(null) }
     var isLoading by remember { mutableStateOf(true) }
 
-    // Carregar próxima viagem do Firestore
-    LaunchedEffect(Unit) {
-        scope.launch {
-            android.util.Log.d("HomeScreen", "=== HomeScreen iniciada ===")
+    // Observar próxima viagem em tempo real
+    DisposableEffect(Unit) {
+        android.util.Log.d("HomeScreen", "=== Iniciando observação em tempo real ===")
 
-            val trip = repository.getNextTrip()
-
+        val listener = repository.observeNextTrip { trip ->
             nextTrip = trip
             isLoading = false
-            android.util.Log.d("HomeScreen", "HomeScreen carregada. Próxima viagem: ${trip?.route ?: "nenhuma"}")
+            android.util.Log.d("HomeScreen", "Dados atualizados: ${trip?.route ?: "nenhuma"}")
+        }
+
+        onDispose {
+            android.util.Log.d("HomeScreen", "Removendo listener de tempo real")
+            listener.remove()
         }
     }
 

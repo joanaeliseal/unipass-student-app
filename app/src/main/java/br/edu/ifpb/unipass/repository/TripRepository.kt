@@ -3,6 +3,7 @@ package br.edu.ifpb.unipass.repository
 import android.util.Log
 import br.edu.ifpb.unipass.models.Trip
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.ListenerRegistration
 import com.google.firebase.firestore.Query
 import kotlinx.coroutines.tasks.await
 
@@ -92,6 +93,62 @@ class TripRepository {
             Log.e(TAG, "Erro ao buscar histórico de viagens: ${e.message}")
             emptyList()
         }
+    }
+
+    /**
+     * Observa a próxima viagem em tempo real
+     * Retorna um ListenerRegistration que deve ser removido quando não for mais necessário
+     */
+    fun observeNextTrip(onTripUpdate: (Trip?) -> Unit): ListenerRegistration {
+        Log.d(TAG, "Iniciando listener de próxima viagem em tempo real")
+
+        return firestore.collection("trips")
+            .whereEqualTo("status", "SCHEDULED")
+            .addSnapshotListener { snapshot, error ->
+                if (error != null) {
+                    Log.e(TAG, "Erro no listener de próxima viagem: ${error.message}")
+                    onTripUpdate(null)
+                    return@addSnapshotListener
+                }
+
+                if (snapshot != null) {
+                    val trips = snapshot.documents.mapNotNull { doc ->
+                        doc.toObject(Trip::class.java)?.copy(id = doc.id)
+                    }
+
+                    val nextTrip = trips.sortedBy { it.date }.firstOrNull()
+                    Log.d(TAG, "Atualização em tempo real - Próxima viagem: ${nextTrip?.route ?: "nenhuma"}")
+                    onTripUpdate(nextTrip)
+                }
+            }
+    }
+
+    /**
+     * Observa o histórico de viagens de um usuário em tempo real
+     * Retorna um ListenerRegistration que deve ser removido quando não for mais necessário
+     */
+    fun observeUserTripHistory(userId: String, onTripsUpdate: (List<Trip>) -> Unit): ListenerRegistration {
+        Log.d(TAG, "Iniciando listener de histórico em tempo real para usuário: $userId")
+
+        return firestore.collection("users")
+            .document(userId)
+            .collection("trips")
+            .addSnapshotListener { snapshot, error ->
+                if (error != null) {
+                    Log.e(TAG, "Erro no listener de histórico: ${error.message}")
+                    onTripsUpdate(emptyList())
+                    return@addSnapshotListener
+                }
+
+                if (snapshot != null) {
+                    val trips = snapshot.documents.mapNotNull { doc ->
+                        doc.toObject(Trip::class.java)?.copy(id = doc.id)
+                    }
+
+                    Log.d(TAG, "Atualização em tempo real - Histórico: ${trips.size} viagens")
+                    onTripsUpdate(trips.sortedByDescending { it.date })
+                }
+            }
     }
 
     /**

@@ -21,7 +21,6 @@ import br.edu.ifpb.unipass.ui.components.AppTopBar
 import br.edu.ifpb.unipass.ui.components.EmptyState
 import br.edu.ifpb.unipass.ui.components.FilterChip
 import br.edu.ifpb.unipass.ui.components.TripCard
-import kotlinx.coroutines.launch
 
 enum class TripFilter {
     ALL, COMPLETED, CANCELLED
@@ -30,23 +29,25 @@ enum class TripFilter {
 @Composable
 fun TripsScreen(navController: NavController, modifier: Modifier = Modifier) {
     val repository = remember { TripRepository() }
-    val scope = rememberCoroutineScope()
 
     var selectedFilter by remember { mutableStateOf(TripFilter.ALL) }
     var allTrips by remember { mutableStateOf<List<Trip>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
 
-    // Carregar viagens do Firestore
-    LaunchedEffect(Unit) {
-        scope.launch {
-            android.util.Log.d("TripsScreen", "=== TripsScreen iniciada ===")
+    // Observar histórico de viagens em tempo real
+    DisposableEffect(Unit) {
+        android.util.Log.d("TripsScreen", "=== Iniciando observação em tempo real ===")
 
-            // TODO: Substituir "user123" pelo ID do usuário logado
-            val trips = repository.getUserTripHistory("user123")
-
+        // TODO: Substituir "user123" pelo ID do usuário logado
+        val listener = repository.observeUserTripHistory("user123") { trips ->
             allTrips = trips
             isLoading = false
-            android.util.Log.d("TripsScreen", "TripsScreen carregada. Total de viagens: ${trips.size}")
+            android.util.Log.d("TripsScreen", "Dados atualizados: ${trips.size} viagens")
+        }
+
+        onDispose {
+            android.util.Log.d("TripsScreen", "Removendo listener de tempo real")
+            listener.remove()
         }
     }
 
