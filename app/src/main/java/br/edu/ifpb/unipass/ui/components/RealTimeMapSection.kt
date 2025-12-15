@@ -91,7 +91,7 @@ private fun MapPreviewCard(
                     color = Color(0xFF8B5CF6),
                     modifier = Modifier
                         .align(Alignment.TopEnd)
-                        .offset(x = (-40).dp, y = 40.dp)
+                        .offset(x = (-40).dp, y = 8.dp)
                 )
             }
 

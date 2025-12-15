@@ -11,11 +11,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import br.edu.ifpb.unipass.models.StudentCard
+import br.edu.ifpb.unipass.ui.components.AppTopBar
 import br.edu.ifpb.unipass.ui.components.BrightnessButton
 import br.edu.ifpb.unipass.ui.components.CardIndicator
 import br.edu.ifpb.unipass.ui.components.StudentCardView
-
-import androidx.compose.material.icons.filled.MoreVert
 
 
 @Composable
@@ -50,8 +49,10 @@ private fun StudentCardContent(
     Scaffold(
         modifier = modifier,
         topBar = {
-            StudentCardTopBar(
+            AppTopBar(
                 title = "Carteirinha Digital",
+                showNavigationIcon = false,
+                showMenuIcon = true,
                 onMenuClick = onMenuClick
             )
         },
@@ -104,37 +105,6 @@ private fun HowToUseLink(onClick: () -> Unit) {
             style = MaterialTheme.typography.bodyMedium
         )
     }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun StudentCardTopBar(
-    title: String,
-    onMenuClick: () -> Unit
-) {
-    TopAppBar(
-        title = {
-            Text(
-                text = title,
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = androidx.compose.ui.text.font.FontWeight.Medium,
-                modifier = Modifier.padding(start = 8.dp)
-            )
-        },
-        actions = {
-            IconButton(onClick = onMenuClick) {
-                Icon(
-                    imageVector = androidx.compose.material.icons.Icons.Filled.MoreVert,
-                    contentDescription = "Menu"
-                )
-            }
-        },
-        colors = TopAppBarDefaults.topAppBarColors(
-            containerColor = Color.White,
-            titleContentColor = Color.Black,
-            actionIconContentColor = Color.Black
-        )
-    )
 }
 
 @Composable
