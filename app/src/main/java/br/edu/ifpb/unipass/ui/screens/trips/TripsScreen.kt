@@ -7,6 +7,7 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.DirectionsBus
+import androidx.compose.ui.Alignment
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -15,10 +16,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import br.edu.ifpb.unipass.models.Trip
+import br.edu.ifpb.unipass.repository.TripRepository
 import br.edu.ifpb.unipass.ui.components.AppTopBar
 import br.edu.ifpb.unipass.ui.components.EmptyState
 import br.edu.ifpb.unipass.ui.components.FilterChip
 import br.edu.ifpb.unipass.ui.components.TripCard
+import kotlinx.coroutines.launch
 
 enum class TripFilter {
     ALL, COMPLETED, CANCELLED
@@ -26,70 +29,50 @@ enum class TripFilter {
 
 @Composable
 fun TripsScreen(navController: NavController, modifier: Modifier = Modifier) {
-    var selectedFilter by remember { mutableStateOf(TripFilter.ALL) }
+    val repository = remember { TripRepository() }
+    val scope = rememberCoroutineScope()
 
-    val mockTrips = listOf(
-        Trip(
-            id = "1",
-            date = "14/12/2024",
-            time = "07:30",
-            origin = "Centro",
-            destination = "UFPB (Campus I)",
-            seatNumber = "12A",
-            status = "COMPLETED"
-        ),
-        Trip(
-            id = "2",
-            date = "13/12/2024",
-            time = "18:00",
-            origin = "UFPB (Campus I)",
-            destination = "Centro",
-            seatNumber = "08B",
-            status = "COMPLETED"
-        ),
-        Trip(
-            id = "3",
-            date = "12/12/2024",
-            time = "07:30",
-            origin = "Centro",
-            destination = "UFPB (Campus I)",
-            seatNumber = "15C",
-            status = "CANCELLED"
-        ),
-        Trip(
-            id = "4",
-            date = "11/12/2024",
-            time = "18:00",
-            origin = "UFPB (Campus I)",
-            destination = "Centro",
-            seatNumber = "20A",
-            status = "COMPLETED"
-        ),
-        Trip(
-            id = "5",
-            date = "10/12/2024",
-            time = "07:30",
-            origin = "Centro",
-            destination = "UFPB (Campus I)",
-            seatNumber = "05D",
-            status = "NO_SHOW"
-        )
-    )
+    var selectedFilter by remember { mutableStateOf(TripFilter.ALL) }
+    var allTrips by remember { mutableStateOf<List<Trip>>(emptyList()) }
+    var isLoading by remember { mutableStateOf(true) }
+
+    // Carregar viagens do Firestore
+    LaunchedEffect(Unit) {
+        scope.launch {
+            android.util.Log.d("TripsScreen", "=== TripsScreen iniciada ===")
+
+            // TODO: Substituir "user123" pelo ID do usuário logado
+            val trips = repository.getUserTripHistory("user123")
+
+            allTrips = trips
+            isLoading = false
+            android.util.Log.d("TripsScreen", "TripsScreen carregada. Total de viagens: ${trips.size}")
+        }
+    }
 
     val filteredTrips = when (selectedFilter) {
-        TripFilter.ALL -> mockTrips
-        TripFilter.COMPLETED -> mockTrips.filter { it.status == "COMPLETED" }
-        TripFilter.CANCELLED -> mockTrips.filter {
+        TripFilter.ALL -> allTrips
+        TripFilter.COMPLETED -> allTrips.filter { it.status == "COMPLETED" }
+        TripFilter.CANCELLED -> allTrips.filter {
             it.status == "CANCELLED" || it.status == "NO_SHOW"
         }
     }
 
-    TripsContent(
-        modifier = modifier,
-        trips = filteredTrips,
-        selectedFilter = selectedFilter,
-        onFilterChange = { selectedFilter = it }
-    )
+    if (isLoading) {
+        Box(
+            modifier = modifier.fillMaxSize(),
+            contentAlignment = androidx.compose.ui.Alignment.Center
+        ) {
+            CircularProgressIndicator()
+        }
+    } else {
+        TripsContent(
+            modifier = modifier,
+            trips = filteredTrips,
+            selectedFilter = selectedFilter,
+            onFilterChange = { selectedFilter = it }
+        )
+    }
 }
 
 @Composable

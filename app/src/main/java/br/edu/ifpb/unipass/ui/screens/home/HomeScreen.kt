@@ -9,7 +9,9 @@ import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.AccessTime
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.HeadsetMic
-import androidx.compose.runtime.Composable
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
@@ -18,27 +20,39 @@ import br.edu.ifpb.unipass.models.QuickAccessOption
 import br.edu.ifpb.unipass.models.Trip
 import br.edu.ifpb.unipass.models.User
 import br.edu.ifpb.unipass.navigation.Routes
+import br.edu.ifpb.unipass.repository.TripRepository
 import br.edu.ifpb.unipass.ui.components.NextTripCard
 import br.edu.ifpb.unipass.ui.components.QuickAccessGrid
 import br.edu.ifpb.unipass.ui.components.RealTimeMapSection
 import br.edu.ifpb.unipass.ui.components.UserProfileHeader
+import kotlinx.coroutines.launch
 
 @Composable
 fun HomeScreen(navController: NavController, modifier: Modifier = Modifier) {
+    val repository = remember { TripRepository() }
+    val scope = rememberCoroutineScope()
+
     val currentUser = User(
         name = "Maria",
         initials = "MS",
         notificationCount = 3
     )
 
-    val nextTrip = Trip(
-        time = "07:30",
-        origin = "Centro",
-        destination = "UFPB (Campus I)",
-        seatNumber = "12A",
-        reservedSeats = 26,
-        totalSeats = 40
-    )
+    var nextTrip by remember { mutableStateOf<Trip?>(null) }
+    var isLoading by remember { mutableStateOf(true) }
+
+    // Carregar próxima viagem do Firestore
+    LaunchedEffect(Unit) {
+        scope.launch {
+            android.util.Log.d("HomeScreen", "=== HomeScreen iniciada ===")
+
+            val trip = repository.getNextTrip()
+
+            nextTrip = trip
+            isLoading = false
+            android.util.Log.d("HomeScreen", "HomeScreen carregada. Próxima viagem: ${trip?.route ?: "nenhuma"}")
+        }
+    }
 
     val quickAccessOptions = listOf(
         QuickAccessOption(
@@ -63,17 +77,26 @@ fun HomeScreen(navController: NavController, modifier: Modifier = Modifier) {
         )
     )
 
-    HomeContent(
-        modifier = modifier,
-        user = currentUser,
-        trip = nextTrip,
-        quickAccessOptions = quickAccessOptions,
-        onNotificationClick = { },
-        onViewTripDetails = { },
-        onViewMap = { },
-        onCancelReservation = { },
-        onViewFullMap = { }
-    )
+    if (isLoading) {
+        Box(
+            modifier = modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
+            CircularProgressIndicator()
+        }
+    } else {
+        HomeContent(
+            modifier = modifier,
+            user = currentUser,
+            trip = nextTrip,
+            quickAccessOptions = quickAccessOptions,
+            onNotificationClick = { },
+            onViewTripDetails = { },
+            onViewMap = { },
+            onCancelReservation = { },
+            onViewFullMap = { }
+        )
+    }
 }
 
 @Composable
