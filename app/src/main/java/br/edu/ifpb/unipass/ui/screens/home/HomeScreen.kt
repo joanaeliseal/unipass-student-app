@@ -111,6 +111,8 @@ private fun HomeContent(
         )
 
         RealTimeMapSection(onViewFullMap = onViewFullMap)
+
+        Spacer(modifier = Modifier.height(24.dp))
     }
 }
 
