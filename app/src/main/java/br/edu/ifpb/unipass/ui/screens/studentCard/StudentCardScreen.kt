@@ -1,6 +1,5 @@
 package br.edu.ifpb.unipass.ui.screens.studentCard
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -9,7 +8,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import br.edu.ifpb.unipass.models.StudentCard
@@ -17,12 +15,11 @@ import br.edu.ifpb.unipass.ui.components.BrightnessButton
 import br.edu.ifpb.unipass.ui.components.CardIndicator
 import br.edu.ifpb.unipass.ui.components.StudentCardView
 
-import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MoreVert
 
 
 @Composable
-fun StudentCardScreen(navController: NavController) {
+fun StudentCardScreen(navController: NavController, modifier: Modifier = Modifier) {
     val studentCard = StudentCard(
         studentName = "JOÃO DA SILVA SANTOS",
         institution = "UFPB - Campus I",
@@ -34,6 +31,7 @@ fun StudentCardScreen(navController: NavController) {
     )
 
     StudentCardContent(
+        modifier = modifier,
         studentCard = studentCard,
         onMenuClick = { },
         onBrightnessClick = { },
@@ -46,9 +44,11 @@ private fun StudentCardContent(
     studentCard: StudentCard,
     onMenuClick: () -> Unit,
     onBrightnessClick: () -> Unit,
-    onHowToUseClick: () -> Unit
+    onHowToUseClick: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
     Scaffold(
+        modifier = modifier,
         topBar = {
             StudentCardTopBar(
                 title = "Carteirinha Digital",
@@ -83,15 +83,13 @@ private fun StudentCardContent(
                 Spacer(modifier = Modifier.height(24.dp))
 
                 HowToUseLink(onClick = onHowToUseClick)
-
-                Spacer(modifier = Modifier.height(120.dp))
             }
 
             BrightnessButton(
                 onClick = onBrightnessClick,
                 modifier = Modifier
                     .align(Alignment.BottomEnd)
-                    .padding(bottom = 80.dp, end = 16.dp)
+                    .padding(end = 16.dp, bottom = 16.dp)
             )
         }
     }
@@ -140,6 +138,6 @@ private fun StudentCardTopBar(
 }
 
 @Composable
-fun CarteirinhaScreen(navController: NavController) {
-    StudentCardScreen(navController)
+fun CarteirinhaScreen(navController: NavController, modifier: Modifier) {
+    StudentCardScreen(navController, modifier)
 }
