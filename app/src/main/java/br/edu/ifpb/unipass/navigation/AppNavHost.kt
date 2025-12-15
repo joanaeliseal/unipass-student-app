@@ -26,25 +26,37 @@ fun AppNavHost() {
 
         composable(Routes.HOME) {
             MainScaffold(navController) { modifier ->
-                HomeScreen(navController)
+                HomeScreen(
+                    navController = navController,
+                    modifier = modifier
+                )
             }
         }
 
         composable(Routes.VIAGENS) {
             MainScaffold(navController) { modifier ->
-                ViagensScreen(navController)
+                ViagensScreen(
+                    navController = navController,
+                    modifier = modifier
+                )
             }
         }
 
         composable(Routes.CARTEIRINHA) {
             MainScaffold(navController) { modifier ->
-                CarteirinhaScreen(navController)
+                CarteirinhaScreen(
+                    navController = navController,
+                    modifier = modifier
+                )
             }
         }
 
         composable(Routes.PERFIL) {
             MainScaffold(navController) { modifier ->
-                PerfilScreen(navController)
+                PerfilScreen(
+                    navController = navController,
+                    modifier = modifier
+                )
             }
         }
 

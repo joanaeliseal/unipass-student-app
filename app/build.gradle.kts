@@ -12,7 +12,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "br.edu.ifpb.unipass_student_app"
+        applicationId = "br.edu.ifpb.unipass"
         minSdk = 24
         targetSdk = 36
         versionCode = 1

@@ -24,7 +24,7 @@ import br.edu.ifpb.unipass.ui.components.RealTimeMapSection
 import br.edu.ifpb.unipass.ui.components.UserProfileHeader
 
 @Composable
-fun HomeScreen(navController: NavController) {
+fun HomeScreen(navController: NavController, modifier: Modifier = Modifier) {
     val currentUser = User(
         name = "Maria",
         initials = "MS",
@@ -64,6 +64,7 @@ fun HomeScreen(navController: NavController) {
     )
 
     HomeContent(
+        modifier = modifier,
         user = currentUser,
         trip = nextTrip,
         quickAccessOptions = quickAccessOptions,
@@ -77,6 +78,7 @@ fun HomeScreen(navController: NavController) {
 
 @Composable
 private fun HomeContent(
+    modifier: Modifier = Modifier,
     user: User,
     trip: Trip?,
     quickAccessOptions: List<QuickAccessOption>,
@@ -84,10 +86,10 @@ private fun HomeContent(
     onViewTripDetails: () -> Unit,
     onViewMap: () -> Unit,
     onCancelReservation: () -> Unit,
-    onViewFullMap: () -> Unit
+    onViewFullMap: () -> Unit,
 ) {
     Column(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxSize()
             .background(Color(0xFFF9FAFB))
             .verticalScroll(rememberScrollState())
