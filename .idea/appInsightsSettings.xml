@@ -8,10 +8,10 @@
             <InsightsFilterSettings>
               <option name="connection">
                 <ConnectionSetting>
-                  <option name="appId" value="PLACEHOLDER" />
-                  <option name="mobileSdkAppId" value="" />
-                  <option name="projectId" value="" />
-                  <option name="projectNumber" value="" />
+                  <option name="appId" value="br.edu.ifpb.unipass_student_app" />
+                  <option name="mobileSdkAppId" value="1:824567536362:android:8fbc181b52966948c6d593" />
+                  <option name="projectId" value="unipass-student-app" />
+                  <option name="projectNumber" value="824567536362" />
                 </ConnectionSetting>
               </option>
               <option name="signal" value="SIGNAL_UNSPECIFIED" />
