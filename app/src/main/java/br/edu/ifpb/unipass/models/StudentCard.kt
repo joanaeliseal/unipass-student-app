@@ -1,6 +1,7 @@
 package br.edu.ifpb.unipass.models
 
 data class StudentCard(
+    val id: String,
     val studentName: String,
     val institution: String,
     val course: String,
