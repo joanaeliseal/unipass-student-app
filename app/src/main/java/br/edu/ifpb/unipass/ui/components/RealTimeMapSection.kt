@@ -71,7 +71,6 @@ private fun MapPreviewCard(
 
             }
 
-            // Marcadores de ônibus
             Box(modifier = Modifier.fillMaxSize()) {
                 BusLocationMarker(
                     color = Color(0xFF8B5CF6),

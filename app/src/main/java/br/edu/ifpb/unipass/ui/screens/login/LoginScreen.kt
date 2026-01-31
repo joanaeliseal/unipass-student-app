@@ -50,7 +50,6 @@ fun LoginScreen(navController: NavController) {
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        // Título
         Text(
             text = "Bem vindo de volta",
             style = MaterialTheme.typography.titleLarge
@@ -66,7 +65,6 @@ fun LoginScreen(navController: NavController) {
 
         Spacer(modifier = Modifier.height(32.dp))
 
-        // Label CPF
         Text(
             text = "CPF",
             style = MaterialTheme.typography.bodySmall,
@@ -75,11 +73,9 @@ fun LoginScreen(navController: NavController) {
                 .padding(bottom = 4.dp)
         )
 
-        // CPF Field com ícone
         OutlinedTextField(
             value = cpf,
             onValueChange = { newValue ->
-                // Aceita apenas números e limita a 11 dígitos
                 if (newValue.filter { it.isDigit() }.length <= 11) {
                     cpf = newValue.filter { it.isDigit() }
                 }
@@ -99,7 +95,6 @@ fun LoginScreen(navController: NavController) {
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Label Senha
         Text(
             text = "Senha",
             style = MaterialTheme.typography.bodySmall,
@@ -108,7 +103,6 @@ fun LoginScreen(navController: NavController) {
                 .padding(bottom = 4.dp)
         )
 
-        // Senha Field com ícones
         OutlinedTextField(
             value = senha,
             onValueChange = { senha = it },
@@ -136,7 +130,6 @@ fun LoginScreen(navController: NavController) {
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        // Esqueceu a senha
         TextButton(
             onClick = { /* futuro */ },
             modifier = Modifier.align(Alignment.End)
@@ -149,7 +142,6 @@ fun LoginScreen(navController: NavController) {
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        // Botão Entrar
         Button(
             onClick = {
                 navController.navigate(Routes.HOME)
@@ -170,7 +162,6 @@ fun LoginScreen(navController: NavController) {
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Divider "ou"
         Text(
             text = "ou",
             style = MaterialTheme.typography.bodyMedium,
@@ -180,7 +171,6 @@ fun LoginScreen(navController: NavController) {
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Criar conta
         OutlinedButton(
             onClick = { /* futuro */ },
             modifier = Modifier.fillMaxWidth()
@@ -193,7 +183,6 @@ fun LoginScreen(navController: NavController) {
 
         Spacer(modifier = Modifier.weight(1f))
 
-        // Version
         Text(
             text = "v3.0.0",
             style = MaterialTheme.typography.bodySmall,
