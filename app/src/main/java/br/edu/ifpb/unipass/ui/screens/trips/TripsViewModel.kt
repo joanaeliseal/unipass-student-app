@@ -1,5 +1,11 @@
 package br.edu.ifpb.unipass.ui.screens.trips
 
+import androidx.lifecycle.viewModelScope
+import br.edu.ifpb.unipass.data.local.AppDatabase
+import br.edu.ifpb.unipass.data.local.mapper.toEntity
+import br.edu.ifpb.unipass.data.local.mapper.toTrip
+import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 import androidx.lifecycle.ViewModel
 import br.edu.ifpb.unipass.data.repository.TripRepository
 import br.edu.ifpb.unipass.models.Trip
@@ -21,26 +27,41 @@ data class TripsUiState(
 )
 
 class TripsViewModel(
-    private val tripRepository: TripRepository
+    private val tripRepository: TripRepository,
+    private val database: AppDatabase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(TripsUiState())
     val uiState: StateFlow<TripsUiState> = _uiState.asStateFlow()
 
     private var tripsListener: ListenerRegistration? = null
+    private val currentUserId = "user123"
 
     init {
         observeTrips()
     }
 
     private fun observeTrips() {
-        // TODO: Substituir "user123" pelo ID do usuário logado
-        tripsListener = tripRepository.observeUserTripHistory("user123") { trips ->
-            _uiState.value = _uiState.value.copy(
-                allTrips = trips,
-                isLoading = false
-            )
-            applyFilter(_uiState.value.selectedFilter)
+        // 1. Carrega do Room primeiro (offline)
+        viewModelScope.launch {
+            database.tripDao().getAllTrips(currentUserId).collect { tripEntities ->
+                val trips = tripEntities.map { it.toTrip() }
+                _uiState.update { state ->
+                    state.copy(
+                        allTrips = trips,
+                        isLoading = false
+                    )
+                }
+                applyFilter(_uiState.value.selectedFilter)
+            }
+        }
+
+        // 2. Sincroniza com Firebase
+        tripsListener = tripRepository.observeUserTripHistory(currentUserId) { trips ->
+            viewModelScope.launch {
+                val tripEntities = trips.map { it.toEntity(currentUserId) }
+                database.tripDao().insertTrips(tripEntities)
+            }
         }
     }
 
@@ -58,7 +79,7 @@ class TripsViewModel(
                 it.status == TripStatus.CANCELLED || it.status == TripStatus.NO_SHOW
             }
         }
-        _uiState.value = _uiState.value.copy(filteredTrips = filtered)
+        _uiState.update { it.copy(filteredTrips = filtered) }
     }
 
     override fun onCleared() {
