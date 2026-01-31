@@ -1,4 +1,4 @@
-package br.edu.ifpb.unipass.repository
+package br.edu.ifpb.unipass.data.repository
 
 import android.util.Log
 import br.edu.ifpb.unipass.models.Trip
