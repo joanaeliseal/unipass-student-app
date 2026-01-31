@@ -17,6 +17,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import br.edu.ifpb.unipass.models.Trip
+import br.edu.ifpb.unipass.models.TripStatus
 
 @Composable
 fun TripCard(
@@ -96,13 +97,12 @@ private fun TripDateTime(dateTime: String) {
 }
 
 @Composable
-private fun TripStatusBadge(status: String) {
+private fun TripStatusBadge(status: TripStatus) {
     val (statusText, statusColor) = when (status) {
-        "SCHEDULED" -> "Agendada" to Color(0xFF6366F1)
-        "COMPLETED" -> "Concluída" to Color(0xFF10B981)
-        "CANCELLED" -> "Cancelada" to Color(0xFFEF4444)
-        "NO_SHOW" -> "Não compareceu" to Color(0xFFF59E0B)
-        else -> "Desconhecido" to Color(0xFF6B7280)
+        TripStatus.SCHEDULED -> "Agendada" to Color(0xFF6366F1)
+        TripStatus.COMPLETED -> "Concluída" to Color(0xFF10B981)
+        TripStatus.CANCELLED -> "Cancelada" to Color(0xFFEF4444)
+        TripStatus.NO_SHOW -> "Não compareceu" to Color(0xFFF59E0B)
     }
 
     Surface(

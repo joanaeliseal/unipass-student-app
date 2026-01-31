@@ -3,6 +3,7 @@ package br.edu.ifpb.unipass.ui.screens.trips
 import androidx.lifecycle.ViewModel
 import br.edu.ifpb.unipass.data.repository.TripRepository
 import br.edu.ifpb.unipass.models.Trip
+import br.edu.ifpb.unipass.models.TripStatus
 import com.google.firebase.firestore.ListenerRegistration
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -20,7 +21,7 @@ data class TripsUiState(
 )
 
 class TripsViewModel(
-    private val tripRepository: TripRepository = TripRepository()
+    private val tripRepository: TripRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(TripsUiState())
@@ -52,9 +53,9 @@ class TripsViewModel(
         val allTrips = _uiState.value.allTrips
         val filtered = when (filter) {
             TripFilter.ALL -> allTrips
-            TripFilter.COMPLETED -> allTrips.filter { it.status == "COMPLETED" }
+            TripFilter.COMPLETED -> allTrips.filter { it.status == TripStatus.COMPLETED }
             TripFilter.CANCELLED -> allTrips.filter {
-                it.status == "CANCELLED" || it.status == "NO_SHOW"
+                it.status == TripStatus.CANCELLED || it.status == TripStatus.NO_SHOW
             }
         }
         _uiState.value = _uiState.value.copy(filteredTrips = filtered)

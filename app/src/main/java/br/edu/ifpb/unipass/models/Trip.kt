@@ -1,22 +1,28 @@
 package br.edu.ifpb.unipass.models
 
-/**
- * Modelo unificado de Viagem
- * Usado tanto para próximas viagens quanto para histórico
- */
+enum class TripStatus(val value: String) {
+    SCHEDULED("SCHEDULED"),
+    COMPLETED("COMPLETED"),
+    CANCELLED("CANCELLED"),
+    NO_SHOW("NO_SHOW");
+
+    companion object {
+        fun fromValue(value: String): TripStatus =
+            entries.find { it.value == value } ?: SCHEDULED
+    }
+}
+
 data class Trip(
     val id: String = "",
-    val date: String = "",                  // Formato: "14/12/2024"
-    val time: String = "",                  // Formato: "07:30"
+    val date: String = "",
+    val time: String = "",
     val origin: String = "",
     val destination: String = "",
     val seatNumber: String = "",
-    val status: String = "SCHEDULED",       // SCHEDULED, COMPLETED, CANCELLED, NO_SHOW
-    val reservedSeats: Int = 0,             // Usado apenas em viagens futuras
-    val totalSeats: Int = 0                 // Usado apenas em viagens futuras
+    val status: TripStatus = TripStatus.SCHEDULED,
+    val reservedSeats: Int = 0,
+    val totalSeats: Int = 0
 ) {
-    constructor() : this("", "", "", "", "", "", "SCHEDULED", 0, 0)
-
     val route: String
         get() = "$origin → $destination"
 
@@ -27,15 +33,8 @@ data class Trip(
         get() = if (totalSeats > 0) reservedSeats.toFloat() / totalSeats.toFloat() else 0f
 
     val isCompleted: Boolean
-        get() = status == "COMPLETED"
+        get() = status == TripStatus.COMPLETED
 
     val isCancelled: Boolean
-        get() = status == "CANCELLED" || status == "NO_SHOW"
-}
-
-enum class TripStatus {
-    SCHEDULED,      // Viagem agendada (próxima viagem)
-    COMPLETED,      // Viagem concluída
-    CANCELLED,      // Viagem cancelada
-    NO_SHOW         // Não compareceu
+        get() = status == TripStatus.CANCELLED || status == TripStatus.NO_SHOW
 }

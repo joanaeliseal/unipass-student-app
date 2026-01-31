@@ -20,7 +20,7 @@ data class HomeUiState(
 )
 
 class HomeViewModel(
-    private val tripRepository: TripRepository = TripRepository()
+    private val tripRepository: TripRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(HomeUiState())

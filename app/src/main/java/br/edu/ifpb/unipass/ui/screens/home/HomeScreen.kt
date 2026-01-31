@@ -16,7 +16,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
+import org.koin.androidx.compose.koinViewModel
 import androidx.navigation.NavController
 import br.edu.ifpb.unipass.models.QuickAccessOption
 import br.edu.ifpb.unipass.models.Trip
@@ -29,7 +29,7 @@ import br.edu.ifpb.unipass.ui.components.UserProfileHeader
 
 @Composable
 fun HomeScreen(navController: NavController, modifier: Modifier = Modifier) {
-    val viewModel: HomeViewModel = viewModel()
+    val viewModel: HomeViewModel = koinViewModel()
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     val quickAccessOptions = listOf(
