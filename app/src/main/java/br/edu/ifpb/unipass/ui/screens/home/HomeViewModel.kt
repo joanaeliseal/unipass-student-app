@@ -4,7 +4,6 @@ import androidx.lifecycle.viewModelScope
 import br.edu.ifpb.unipass.data.local.AppDatabase
 import br.edu.ifpb.unipass.data.local.mapper.toEntity
 import br.edu.ifpb.unipass.data.local.mapper.toTrip
-import br.edu.ifpb.unipass.data.local.mapper.toUser
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import androidx.lifecycle.ViewModel
@@ -43,11 +42,38 @@ class HomeViewModel(
     }
 
     private fun observeNextTrip() {
-        tripListener = tripRepository.observeNextTrip { trip ->
+        tripListener = tripRepository.observeNextTrip({ trip ->
             _uiState.value = _uiState.value.copy(
                 nextTrip = trip,
                 isLoading = false
             )
+        }) { trip ->
+            viewModelScope.launch {
+                try {
+                    if (trip != null) {
+                        val entity = trip.toEntity(userId)
+                        database.tripDao().insertTrip(entity)
+
+                        _uiState.update { state ->
+                            state.copy(
+                                nextTrip = trip,
+                                isLoading = false,
+                                error = null
+                            )
+                        }
+                    } else {
+                        _uiState.update { state ->
+                            state.copy(
+                                nextTrip = null,
+                                isLoading = false
+                            )
+                        }
+                    }
+                } catch (e: Exception) {
+                    Log.e(TAG, "Erro ao sincronizar Firebase", e)
+                    setError("Erro ao sincronizar viagem")
+                }
+            }
         }
     }
     private fun loadUserData() {
@@ -64,11 +90,38 @@ class HomeViewModel(
         }
 
         // 2. Sincroniza com Firebase
-        tripListener = tripRepository.observeNextTrip { trip ->
+        tripListener = tripRepository.observeNextTrip({ trip ->
             viewModelScope.launch {
                 trip?.let {
                     val tripEntity = it.toEntity(currentUserId)
                     database.tripDao().insertTrip(tripEntity)
+                }
+            }
+        }) { trip ->
+            viewModelScope.launch {
+                try {
+                    if (trip != null) {
+                        val entity = trip.toEntity(userId)
+                        database.tripDao().insertTrip(entity)
+
+                        _uiState.update { state ->
+                            state.copy(
+                                nextTrip = trip,
+                                isLoading = false,
+                                error = null
+                            )
+                        }
+                    } else {
+                        _uiState.update { state ->
+                            state.copy(
+                                nextTrip = null,
+                                isLoading = false
+                            )
+                        }
+                    }
+                } catch (e: Exception) {
+                    Log.e(TAG, "Erro ao sincronizar Firebase", e)
+                    setError("Erro ao sincronizar viagem")
                 }
             }
         }
