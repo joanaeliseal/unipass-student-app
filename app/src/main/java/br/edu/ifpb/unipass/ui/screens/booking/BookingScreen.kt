@@ -1,4 +1,4 @@
-package br.edu.ifpb.unipass.ui.screens.reserva
+package br.edu.ifpb.unipass.ui.screens.booking
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn

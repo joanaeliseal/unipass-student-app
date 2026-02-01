@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "824567536362",
+    "project_id": "unipass-student-app",
+    "storage_bucket": "unipass-student-app.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:824567536362:android:8fbc181b52966948c6d593",
+        "android_client_info": {
+          "package_name": "br.edu.ifpb.unipass_student_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAuGIJz3zdZY_8KqSPlgOz_enc5ufEOQ8Q"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
