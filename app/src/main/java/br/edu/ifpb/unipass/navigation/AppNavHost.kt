@@ -4,15 +4,13 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import br.edu.ifpb.unipass.ui.components.MainScaffold
-import br.edu.ifpb.unipass.ui.screens.studentCard.CarteirinhaScreen
+import br.edu.ifpb.unipass.ui.screens.carteirinha.CarteirinhaScreen
 import br.edu.ifpb.unipass.ui.screens.home.HomeScreen
 import br.edu.ifpb.unipass.ui.screens.login.LoginScreen
 import br.edu.ifpb.unipass.ui.screens.profile.PerfilScreen
-import br.edu.ifpb.unipass.ui.screens.booking.ReservaViagemScreen
+import br.edu.ifpb.unipass.ui.screens.reserva.ReservaViagemScreen
 import br.edu.ifpb.unipass.ui.screens.schedule.ScheduleScreen
 import br.edu.ifpb.unipass.ui.screens.support.SupportScreen
-import br.edu.ifpb.unipass.ui.screens.trips.ViagensScreen
 
 @Composable
 fun AppNavHost() {
@@ -27,39 +25,15 @@ fun AppNavHost() {
         }
 
         composable(Routes.HOME) {
-            MainScaffold(navController) { modifier ->
-                HomeScreen(
-                    navController = navController,
-                    modifier = modifier
-                )
-            }
-        }
-
-        composable(Routes.VIAGENS) {
-            MainScaffold(navController) { modifier ->
-                ViagensScreen(
-                    navController = navController,
-                    modifier = modifier
-                )
-            }
+            HomeScreen(navController)
         }
 
         composable(Routes.CARTEIRINHA) {
-            MainScaffold(navController) { modifier ->
-                CarteirinhaScreen(
-                    navController = navController,
-                    modifier = modifier
-                )
-            }
+            CarteirinhaScreen(navController)
         }
 
         composable(Routes.PERFIL) {
-            MainScaffold(navController) { modifier ->
-                PerfilScreen(
-                    navController = navController,
-                    modifier = modifier
-                )
-            }
+            PerfilScreen(navController)
         }
 
         composable(Routes.RESERVA) {
