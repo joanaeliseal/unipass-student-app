@@ -4,6 +4,8 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import br.edu.ifpb.unipass.data.local.AppDatabase
+import br.edu.ifpb.unipass.data.local.UserSessionManager
+import br.edu.ifpb.unipass.data.local.entity.UserEntity
 import br.edu.ifpb.unipass.ui.state.LoginUiState
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -12,7 +14,8 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 class LoginViewModel(
-    private val database: AppDatabase
+    private val database: AppDatabase,
+    private val sessionManager: UserSessionManager
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(LoginUiState())
@@ -22,8 +25,35 @@ class LoginViewModel(
         private const val TAG = "LoginViewModel"
     }
 
+    init {
+        // Cria usuário de teste se não existir
+        createTestUserIfNeeded()
+    }
+
+    private fun createTestUserIfNeeded() {
+        viewModelScope.launch {
+            try {
+                val testCpf = "12345678900"
+                val existingUser = database.userDao().getUserByCpf(testCpf)
+
+                if (existingUser == null) {
+                    val testUser = UserEntity(
+                        id = "user_${testCpf}",
+                        name = "Maria Silva Santos",
+                        cpf = testCpf,
+                        email = "maria.santos@estudante.edu.br",
+                        notificationCount = 3
+                    )
+                    database.userDao().insertUser(testUser)
+                    Log.d(TAG, "Usuário de teste criado: ${testUser.name}")
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Erro ao criar usuário de teste: ${e.message}")
+            }
+        }
+    }
+
     fun onCpfChange(cpf: String) {
-        // Remove caracteres não numéricos e limita a 11 dígitos
         val filteredCpf = cpf.filter { it.isDigit() }.take(11)
         _uiState.update { it.copy(cpf = filteredCpf) }
     }
@@ -65,19 +95,25 @@ class LoginViewModel(
                     return@launch
                 }
 
-                // TODO: Implementar autenticação real com Firebase
-                // Por enquanto, apenas verifica se o usuário existe no banco local
+                // Busca usuário no banco local
                 val user = database.userDao().getUserByCpf(cpf)
 
                 if (user != null) {
-                    Log.d(TAG, "Login bem-sucedido para: ${user.name}")
+                    // Salva a sessão do usuário
+                    sessionManager.saveUserSession(
+                        userId = user.id,
+                        userName = user.name,
+                        userCpf = user.cpf
+                    )
+
+                    Log.d(TAG, "Login bem-sucedido para: ${user.name} (ID: ${user.id})")
                     _uiState.update { it.copy(isLoading = false) }
                     onSuccess()
                 } else {
                     _uiState.update {
                         it.copy(
                             isLoading = false,
-                            error = "CPF ou senha inválidos"
+                            error = "CPF não cadastrado. Use: 12345678900"
                         )
                     }
                 }

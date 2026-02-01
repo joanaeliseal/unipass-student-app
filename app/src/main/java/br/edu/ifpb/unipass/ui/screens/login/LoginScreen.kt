@@ -1,9 +1,7 @@
 package br.edu.ifpb.unipass.ui.screens.login
 
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Lock
@@ -21,16 +19,17 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import br.edu.ifpb.unipass.R
 import br.edu.ifpb.unipass.navigation.Routes
+import br.edu.ifpb.unipass.ui.viewmodel.LoginViewModel
+import org.koin.androidx.compose.koinViewModel
 
 @Composable
 fun LoginScreen(navController: NavController) {
-
-    var cpf by remember { mutableStateOf("") }
-    var senha by remember { mutableStateOf("") }
-    var passwordVisible by remember { mutableStateOf(false) }
+    val viewModel: LoginViewModel = koinViewModel()
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     Column(
         modifier = Modifier
@@ -46,7 +45,6 @@ fun LoginScreen(navController: NavController) {
             contentDescription = "Logo Prefeitura de Sapé",
             modifier = Modifier.size(56.dp)
         )
-
 
         Spacer(modifier = Modifier.height(24.dp))
 
@@ -74,12 +72,8 @@ fun LoginScreen(navController: NavController) {
         )
 
         OutlinedTextField(
-            value = cpf,
-            onValueChange = { newValue ->
-                if (newValue.filter { it.isDigit() }.length <= 11) {
-                    cpf = newValue.filter { it.isDigit() }
-                }
-            },
+            value = uiState.cpf,
+            onValueChange = { viewModel.onCpfChange(it) },
             placeholder = { Text("000.000.000-00", color = Color.LightGray) },
             leadingIcon = {
                 Icon(
@@ -90,7 +84,8 @@ fun LoginScreen(navController: NavController) {
             },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
             modifier = Modifier.fillMaxWidth(),
-            singleLine = true
+            singleLine = true,
+            isError = uiState.error != null
         )
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -104,8 +99,8 @@ fun LoginScreen(navController: NavController) {
         )
 
         OutlinedTextField(
-            value = senha,
-            onValueChange = { senha = it },
+            value = uiState.password,
+            onValueChange = { viewModel.onPasswordChange(it) },
             placeholder = { Text("Digite sua senha", color = Color.LightGray) },
             leadingIcon = {
                 Icon(
@@ -115,18 +110,30 @@ fun LoginScreen(navController: NavController) {
                 )
             },
             trailingIcon = {
-                IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                IconButton(onClick = { viewModel.togglePasswordVisibility() }) {
                     Icon(
-                        imageVector = if (passwordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
-                        contentDescription = if (passwordVisible) "Ocultar senha" else "Mostrar senha",
+                        imageVector = if (uiState.isPasswordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
+                        contentDescription = if (uiState.isPasswordVisible) "Ocultar senha" else "Mostrar senha",
                         tint = Color.Gray
                     )
                 }
             },
-            visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+            visualTransformation = if (uiState.isPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
             modifier = Modifier.fillMaxWidth(),
-            singleLine = true
+            singleLine = true,
+            isError = uiState.error != null
         )
+
+        // Mensagem de erro
+        if (uiState.error != null) {
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = uiState.error!!,
+                color = MaterialTheme.colorScheme.error,
+                style = MaterialTheme.typography.bodySmall,
+                modifier = Modifier.fillMaxWidth()
+            )
+        }
 
         Spacer(modifier = Modifier.height(8.dp))
 
@@ -144,20 +151,32 @@ fun LoginScreen(navController: NavController) {
 
         Button(
             onClick = {
-                navController.navigate(Routes.HOME)
+                viewModel.onLoginClick {
+                    navController.navigate(Routes.HOME) {
+                        popUpTo(Routes.LOGIN) { inclusive = true }
+                    }
+                }
             },
             modifier = Modifier
                 .fillMaxWidth()
                 .height(48.dp),
-            enabled = cpf.isNotBlank() && senha.isNotBlank(),
+            enabled = uiState.cpf.isNotBlank() && uiState.password.isNotBlank() && !uiState.isLoading,
             colors = ButtonDefaults.buttonColors(
-                containerColor = Color(0xFFE5E7EB),
-                contentColor = Color(0xFF374151),
-                disabledContainerColor = Color(0xFFF5F5F5),
-                disabledContentColor = Color(0xFFD1D5DB)
+                containerColor = Color(0xFF6366F1),
+                contentColor = Color.White,
+                disabledContainerColor = Color(0xFFE5E7EB),
+                disabledContentColor = Color(0xFF9CA3AF)
             )
         ) {
-            Text("Entrar")
+            if (uiState.isLoading) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(20.dp),
+                    color = Color.White,
+                    strokeWidth = 2.dp
+                )
+            } else {
+                Text("Entrar")
+            }
         }
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -183,6 +202,14 @@ fun LoginScreen(navController: NavController) {
 
         Spacer(modifier = Modifier.weight(1f))
 
+        // Dica para teste
+        Text(
+            text = "CPF de teste: 12345678900",
+            style = MaterialTheme.typography.bodySmall,
+            color = Color.Gray,
+            modifier = Modifier.padding(bottom = 8.dp)
+        )
+
         Text(
             text = "v3.0.0",
             style = MaterialTheme.typography.bodySmall,
@@ -191,4 +218,3 @@ fun LoginScreen(navController: NavController) {
         )
     }
 }
-

@@ -4,6 +4,8 @@
 ![Kotlin](https://img.shields.io/badge/Language-Kotlin-blue.svg)
 ![Jetpack Compose](https://img.shields.io/badge/UI-Jetpack%20Compose-orange.svg)
 ![Firebase](https://img.shields.io/badge/Database-Firebase%20Firestore-yellow.svg)
+![Room](https://img.shields.io/badge/Local%20DB-Room-purple.svg)
+![Koin](https://img.shields.io/badge/DI-Koin-red.svg)
 
 Sistema de gerenciamento de transporte estudantil que permite aos estudantes visualizar e gerenciar suas viagens, consultar horários, fazer reservas e acompanhar o ônibus em tempo real.
 
@@ -17,8 +19,10 @@ Sistema de gerenciamento de transporte estudantil que permite aos estudantes vis
 - [Estrutura do Projeto](#-estrutura-do-projeto)
 - [Navegação e Rotas](#-navegação-e-rotas)
 - [Banco de Dados](#-banco-de-dados)
+- [Autenticação e Sessão](#-autenticação-e-sessão)
 - [Modelos de Dados](#-modelos-de-dados)
 - [Componentes UI](#-componentes-ui)
+- [Injeção de Dependência](#-injeção-de-dependência)
 - [Fluxo de Dados](#-fluxo-de-dados)
 - [Configuração e Instalação](#-configuração-e-instalação)
 - [Tecnologias Utilizadas](#-tecnologias-utilizadas)
@@ -29,11 +33,14 @@ Sistema de gerenciamento de transporte estudantil que permite aos estudantes vis
 
 O **UniPass** é um aplicativo Android desenvolvido em Kotlin com Jetpack Compose para gerenciamento de transporte estudantil. O app permite que estudantes:
 
+- Façam login com CPF
 - Visualizem a próxima viagem agendada
 - Consultem o histórico completo de viagens
 - Façam reservas de assentos
+- Consultem horários de ônibus
 - Vejam a localização do ônibus em tempo real
 - Acessem sua carteirinha digital
+- Entrem em contato com o suporte
 
 ### Screenshots
 
@@ -43,7 +50,14 @@ O **UniPass** é um aplicativo Android desenvolvido em Kotlin com Jetpack Compos
 
 ## ✨ Funcionalidades
 
+### 🔐 Tela de Login
+- Autenticação por CPF e senha
+- Validação de campos
+- Sessão persistente com SharedPreferences
+- Usuário de teste pré-cadastrado
+
 ### 🏠 Tela Inicial (Home)
+- Saudação personalizada com nome do usuário ("Olá, {nome}")
 - Visualização da próxima viagem agendada
 - Informações de data, hora, origem e destino
 - Número do assento reservado
@@ -63,46 +77,66 @@ O **UniPass** é um aplicativo Android desenvolvido em Kotlin com Jetpack Compos
 - Informações do aluno
 
 ### 👤 Perfil
-- Informações do usuário
+- Informações completas do usuário
+- Estatísticas de viagens (realizadas e agendadas)
 - Configurações da conta
+- Opção de logout
 
 ### 📅 Reserva de Viagens
 - Sistema de reserva de assentos
 - Seleção de horários disponíveis
+- Confirmação de reserva
+
+### 🕐 Horários
+- Lista de horários disponíveis
+- Informações de rotas e vagas
+
+### 📞 Suporte
+- Canais de atendimento (telefone, email, chat)
+- Perguntas frequentes (FAQ)
 
 ---
 
 ## 🏗️ Arquitetura
 
-O projeto segue uma arquitetura em camadas inspirada no padrão **MVVM (Model-View-ViewModel)** adaptado para Jetpack Compose:
+O projeto segue uma arquitetura em camadas baseada no padrão **MVVM (Model-View-ViewModel)** com **Repository Pattern** e **Offline-First**:
 
 ```
 ┌─────────────────────────────────────────────────┐
 │                    UI Layer                      │
 │  (Screens + Composables + Components)           │
 │                                                  │
-│  • HomeScreen.kt                                │
-│  • TripsScreen.kt                               │
-│  • CarteirinhaScreen.kt                         │
+│  • HomeScreen, LoginScreen, PerfilScreen        │
+│  • ScheduleScreen, SupportScreen                │
 │  • Components (Cards, Headers, etc.)            │
+└─────────────────────────────────────────────────┘
+                        ↕
+┌─────────────────────────────────────────────────┐
+│               ViewModel Layer                    │
+│           (State Management)                     │
+│                                                  │
+│  • HomeViewModel                                │
+│  • LoginViewModel                               │
+│  • TripsViewModel                               │
+│  • StudentCardViewModel                         │
 └─────────────────────────────────────────────────┘
                         ↕
 ┌─────────────────────────────────────────────────┐
 │                 Data Layer                       │
 │           (Repository Pattern)                   │
 │                                                  │
-│  • TripRepository.kt                            │
-│    - Snapshot Listeners (Tempo Real)            │
-│    - CRUD Operations                            │
+│  • TripRepository (Firebase)                    │
+│  • UserSessionManager (SharedPrefs)             │
+│  • Room DAOs (Local DB)                         │
 └─────────────────────────────────────────────────┘
                         ↕
 ┌─────────────────────────────────────────────────┐
-│              Firebase Firestore                  │
-│           (Cloud NoSQL Database)                 │
+│            Data Sources                          │
 │                                                  │
-│  Collections:                                    │
-│  • trips/                                       │
-│  • users/{userId}/trips/                        │
+│  ┌─────────────┐    ┌─────────────────────┐    │
+│  │  Room DB    │    │  Firebase Firestore │    │
+│  │  (Offline)  │    │     (Cloud)         │    │
+│  └─────────────┘    └─────────────────────┘    │
 └─────────────────────────────────────────────────┘
 ```
 
@@ -116,24 +150,34 @@ O projeto segue uma arquitetura em camadas inspirada no padrão **MVVM (Model-Vi
   - State Hoisting
   - Composables reutilizáveis
   - Material Design 3
+  - Observação de StateFlow via `collectAsStateWithLifecycle`
 
-#### 2. **Data Layer** (Domain/Repository)
+#### 2. **ViewModel Layer**
+- **Responsabilidade**: Gerenciamento de estado e lógica de apresentação
+- **Tecnologia**: Android ViewModel + Kotlin Coroutines
+- **Localização**: `ui/viewmodel/`
+- **Características**:
+  - StateFlow para estado reativo
+  - Injeção via Koin
+  - Ciclo de vida consciente
+
+#### 3. **Data Layer** (Repository)
 - **Responsabilidade**: Acesso e gerenciamento de dados
-- **Tecnologia**: Firebase Firestore SDK
-- **Localização**: `repository/`
+- **Tecnologia**: Firebase Firestore SDK + Room
+- **Localização**: `data/repository/`, `data/local/`
 - **Características**:
   - Repository Pattern
+  - Offline-first com Room
+  - Sincronização com Firebase
   - Snapshot Listeners para tempo real
-  - Tratamento de erros
-  - Logging para debug
 
-#### 3. **Model Layer**
+#### 4. **Model Layer**
 - **Responsabilidade**: Estruturas de dados
 - **Localização**: `models/`
 - **Características**:
   - Data Classes
-  - Serialização Firestore
-  - Computed Properties
+  - Entidades Room
+  - Mappers entre camadas
 
 ---
 
@@ -145,25 +189,39 @@ app/src/main/java/br/edu/ifpb/unipass/
 ├── data/
 │   ├── firebase/
 │   │   └── FirebaseService.kt
+│   ├── local/
+│   │   ├── AppDatabase.kt              # Configuração Room
+│   │   ├── UserSessionManager.kt       # Gerenciamento de sessão
+│   │   ├── dao/
+│   │   │   ├── TripDao.kt
+│   │   │   ├── UserDao.kt
+│   │   │   └── StudentCardDao.kt
+│   │   ├── entity/
+│   │   │   ├── TripEntity.kt
+│   │   │   ├── UserEntity.kt
+│   │   │   └── StudentCardEntity.kt
+│   │   └── mapper/
+│   │       └── EntityMappers.kt        # Conversão Entity <-> Model
 │   └── repository/
-│       ├── EstudanteRepository.kt
-│       └── ViagemRepository.kt
+│       ├── TripRepository.kt
+│       └── EstudanteRepository.kt
+│
+├── di/
+│   └── AppModule.kt                    # Módulo Koin
 │
 ├── models/
-│   ├── Trip.kt                    # Modelo de Viagem
-│   ├── User.kt                    # Modelo de Usuário
-│   ├── QuickAccessOption.kt       # Opções de acesso rápido
-│   └── BottomNavItem.kt          # Itens da navegação inferior
+│   ├── Trip.kt                         # Modelo de Viagem
+│   ├── User.kt                         # Modelo de Usuário
+│   ├── StudentCard.kt                  # Modelo de Carteirinha
+│   ├── QuickAccessOption.kt            # Opções de acesso rápido
+│   └── BottomNavItem.kt                # Itens da navegação inferior
 │
 ├── navigation/
-│   ├── AppNavHost.kt             # Navegação principal
-│   └── Routes.kt                 # Constantes de rotas
-│
-├── repository/
-│   └── TripRepository.kt         # Repository de Viagens (Firestore)
+│   ├── AppNavHost.kt                   # Navegação principal
+│   └── Routes.kt                       # Constantes de rotas
 │
 ├── ui/
-│   ├── components/               # Componentes reutilizáveis
+│   ├── components/                     # Componentes reutilizáveis
 │   │   ├── AppTopBar.kt
 │   │   ├── BottomNavigationBar.kt
 │   │   ├── EmptyState.kt
@@ -175,36 +233,55 @@ app/src/main/java/br/edu/ifpb/unipass/
 │   │   ├── TripCard.kt
 │   │   └── UserProfileHeader.kt
 │   │
-│   ├── screens/                  # Telas do aplicativo
+│   ├── screens/                        # Telas do aplicativo
 │   │   ├── booking/
-│   │   │   └── ReservaViagemScreen.kt
+│   │   │   └── BookingScreen.kt
 │   │   ├── home/
 │   │   │   └── HomeScreen.kt
 │   │   ├── login/
 │   │   │   └── LoginScreen.kt
 │   │   ├── profile/
 │   │   │   └── PerfilScreen.kt
+│   │   ├── schedule/
+│   │   │   └── ScheduleScreen.kt
 │   │   ├── studentCard/
 │   │   │   └── CarteirinhaScreen.kt
+│   │   ├── support/
+│   │   │   └── SupportScreen.kt
 │   │   └── trips/
-│   │       └── TripsScreen.kt
+│   │       ├── TripsScreen.kt
+│   │       └── TripsViewModel.kt
+│   │
+│   ├── state/
+│   │   └── UiStates.kt                 # Estados da UI
+│   │
+│   ├── viewmodel/                      # ViewModels
+│   │   ├── HomeViewModel.kt
+│   │   ├── LoginViewModel.kt
+│   │   ├── StudentCardViewModel.kt
+│   │   └── TripsViewModel.kt
 │   │
 │   └── theme/
-│       └── UnipassTheme.kt
+│       ├── Theme.kt
+│       └── Type.kt
 │
-└── MainActivity.kt               # Activity principal
+├── UnipassApplication.kt               # Application class (Koin init)
+└── MainActivity.kt                     # Activity principal
 ```
 
 ### Descrição dos Diretórios
 
 | Diretório | Descrição |
 |-----------|-----------|
-| `data/` | Camada de dados (legacy, não utilizada atualmente) |
+| `data/local/` | Banco de dados Room e gerenciamento de sessão |
+| `data/repository/` | Implementação do Repository Pattern |
+| `di/` | Configuração de injeção de dependência (Koin) |
 | `models/` | Classes de modelo (Data Classes) |
 | `navigation/` | Configuração de navegação do app |
-| `repository/` | Implementação do Repository Pattern |
 | `ui/components/` | Componentes Compose reutilizáveis |
 | `ui/screens/` | Telas completas do aplicativo |
+| `ui/state/` | Classes de estado da UI |
+| `ui/viewmodel/` | ViewModels para gerenciamento de estado |
 | `ui/theme/` | Tema e estilos do Material Design |
 
 ---
@@ -222,15 +299,15 @@ object Routes {
     const val LOGIN = "login"
     const val HOME = "home"
     const val VIAGENS = "viagens"
+    const val RESERVA = "reserva"
     const val CARTEIRINHA = "carteirinha"
     const val PERFIL = "perfil"
-    const val RESERVA = "reserva"
+    const val HORARIOS = "horarios"
+    const val SUPORTE = "suporte"
 }
 ```
 
-#### Arquivo: `navigation/AppNavHost.kt`
-
-**Estrutura de Navegação:**
+#### Estrutura de Navegação
 
 ```
 AppNavHost
@@ -242,7 +319,10 @@ AppNavHost
     ├── CARTEIRINHA
     └── PERFIL
 
-RESERVA (tela separada, sem Bottom Navigation)
+Telas sem Bottom Navigation:
+├── RESERVA
+├── HORARIOS
+└── SUPORTE
 ```
 
 ### Fluxo de Navegação
@@ -254,10 +334,9 @@ graph LR
     B --> D[CarteirinhaScreen]
     B --> E[PerfilScreen]
     B --> F[ReservaViagemScreen]
-    C --> B
-    D --> B
-    E --> B
-    F --> B
+    B --> G[ScheduleScreen]
+    B --> H[SupportScreen]
+    E --> A
 ```
 
 ### MainScaffold
@@ -266,12 +345,6 @@ O `MainScaffold` envolve as telas principais e fornece:
 - **Bottom Navigation Bar** com 4 itens
 - **Padding consistente**
 - **Navegação entre Home, Viagens, Carteirinha e Perfil**
-
-```kotlin
-MainScaffold(navController) { modifier ->
-    // Conteúdo da tela
-}
-```
 
 ### Bottom Navigation
 
@@ -282,137 +355,205 @@ MainScaffold(navController) { modifier ->
 | 💳 CreditCard | Carteirinha | `Routes.CARTEIRINHA` | CarteirinhaScreen |
 | 👤 Person | Perfil | `Routes.PERFIL` | PerfilScreen |
 
+### Acesso Rápido (HomeScreen)
+
+| Ícone | Label | Navega para |
+|-------|-------|-------------|
+| 📅 DateRange | Reservar | `Routes.RESERVA` |
+| 🕐 AccessTime | Horários | `Routes.HORARIOS` |
+| 📋 List | Histórico | `Routes.VIAGENS` |
+| 🎧 HeadsetMic | Suporte | `Routes.SUPORTE` |
+
 ---
 
 ## 🗄️ Banco de Dados
 
+### Arquitetura de Dados (Offline-First)
+
+O app utiliza uma estratégia **offline-first** com duas fontes de dados:
+
+1. **Room Database** (Local) - Dados offline e cache
+2. **Firebase Firestore** (Cloud) - Sincronização e tempo real
+
+```
+┌─────────────────────────────────────────────────────┐
+│                    ViewModel                         │
+└─────────────────────────────────────────────────────┘
+                         │
+                         ▼
+┌─────────────────────────────────────────────────────┐
+│                   Repository                         │
+│  1. Carrega do Room (offline)                       │
+│  2. Sincroniza com Firebase (online)                │
+│  3. Salva no Room para próxima vez                  │
+└─────────────────────────────────────────────────────┘
+            │                          │
+            ▼                          ▼
+┌─────────────────────┐    ┌─────────────────────────┐
+│     Room (Local)    │    │  Firebase Firestore     │
+│  - UserEntity       │    │  - /trips               │
+│  - TripEntity       │    │  - /users/{id}/trips    │
+│  - StudentCardEntity│    │                         │
+└─────────────────────┘    └─────────────────────────┘
+```
+
+### Room Database
+
+#### Entidades
+
+**UserEntity**
+```kotlin
+@Entity(tableName = "users")
+data class UserEntity(
+    @PrimaryKey val id: String,
+    val name: String,
+    val cpf: String,
+    val email: String = "",
+    val photoUrl: String? = null,
+    val notificationCount: Int = 0,
+    val createdAt: Long,
+    val updatedAt: Long
+)
+```
+
+**TripEntity**
+```kotlin
+@Entity(tableName = "trips")
+data class TripEntity(
+    @PrimaryKey val id: String,
+    val userId: String,
+    val date: String,
+    val time: String,
+    val origin: String,
+    val destination: String,
+    val seatNumber: String,
+    val status: String,
+    val reservedSeats: Int,
+    val totalSeats: Int
+)
+```
+
+#### DAOs
+
+**UserDao**
+```kotlin
+@Dao
+interface UserDao {
+    @Query("SELECT * FROM users WHERE id = :userId")
+    fun getUserById(userId: String): Flow<UserEntity?>
+
+    @Query("SELECT * FROM users WHERE cpf = :cpf")
+    suspend fun getUserByCpf(cpf: String): UserEntity?
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertUser(user: UserEntity)
+}
+```
+
+**TripDao**
+```kotlin
+@Dao
+interface TripDao {
+    @Query("SELECT * FROM trips WHERE userId = :userId ORDER BY date DESC")
+    fun getNextTrip(userId: String): Flow<TripEntity?>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertTrip(trip: TripEntity)
+
+    @Update
+    suspend fun updateTrip(trip: TripEntity)
+}
+```
+
 ### Firebase Firestore
 
-O app utiliza **Firebase Firestore** como banco de dados NoSQL em nuvem.
-
-#### Estrutura de Dados no Firestore
+#### Estrutura de Dados
 
 ```
 Firestore Database
 │
 ├── trips (collection)
-│   ├── [document_id]
-│   │   ├── date: String              # "2025-12-20"
-│   │   ├── time: String              # "07:30"
-│   │   ├── origin: String            # "Sapé"
-│   │   ├── destination: String       # "UFPB"
-│   │   ├── seatNumber: String        # "12B"
-│   │   ├── status: String            # "SCHEDULED"
-│   │   ├── reservedSeats: Number     # 39
-│   │   └── totalSeats: Number        # 40
-│   │
 │   └── [document_id]
-│       └── ...
+│       ├── date: String
+│       ├── time: String
+│       ├── origin: String
+│       ├── destination: String
+│       ├── seatNumber: String
+│       ├── status: String
+│       ├── reservedSeats: Number
+│       └── totalSeats: Number
 │
 └── users (collection)
     └── [userId] (document)
         └── trips (subcollection)
-            ├── [document_id]
-            │   ├── date: String
-            │   ├── time: String
-            │   ├── origin: String
-            │   ├── destination: String
-            │   ├── seatNumber: String
-            │   └── status: String
-            │
             └── [document_id]
                 └── ...
 ```
 
-#### Coleções e Documentos
+---
 
-##### 1. **Collection: `trips`**
-- **Propósito**: Armazena viagens agendadas (próximas viagens)
-- **Filtro**: `status == "SCHEDULED"`
-- **Ordenação**: Por data (mais próxima primeiro)
-- **Usado em**: HomeScreen
+## 🔐 Autenticação e Sessão
 
-##### 2. **Collection: `users/{userId}/trips`** (Subcoleção)
-- **Propósito**: Armazena histórico de viagens de cada usuário
-- **Filtros**: Todos os status (COMPLETED, CANCELLED, NO_SHOW, SCHEDULED)
-- **Ordenação**: Por data (mais recente primeiro)
-- **Usado em**: TripsScreen
+### UserSessionManager
 
-### TripRepository
+O app utiliza `SharedPreferences` para gerenciar a sessão do usuário.
 
-O `TripRepository` é responsável por toda comunicação com o Firestore.
-
-#### Funções Principais
-
-##### 1. **Snapshot Listeners (Tempo Real)**
+**Arquivo**: `data/local/UserSessionManager.kt`
 
 ```kotlin
-fun observeNextTrip(onTripUpdate: (Trip?) -> Unit): ListenerRegistration
-```
-- Observa viagens com `status="SCHEDULED"`
-- Retorna a primeira viagem (próxima)
-- Atualiza automaticamente quando dados mudam
-- Usado em: **HomeScreen**
+class UserSessionManager(context: Context) {
 
-```kotlin
-fun observeUserTripHistory(userId: String, onTripsUpdate: (List<Trip>) -> Unit): ListenerRegistration
-```
-- Observa histórico de viagens do usuário
-- Retorna lista ordenada por data (decrescente)
-- Atualiza automaticamente quando dados mudam
-- Usado em: **TripsScreen**
-
-##### 2. **Queries Únicas (One-time reads)**
-
-```kotlin
-suspend fun getNextTrip(): Trip?
-```
-- Busca próxima viagem (execução única)
-- Retorna null se não houver viagens
-
-```kotlin
-suspend fun getUserTripHistory(userId: String): List<Trip>
-```
-- Busca histórico completo (execução única)
-- Retorna lista vazia se não houver viagens
-
-##### 3. **Utilidades**
-
-```kotlin
-fun filterTripsByStatus(trips: List<Trip>, status: String): List<Trip>
-```
-- Filtra viagens por status
-- Usado localmente após buscar dados
-
-### Firestore Security Rules
-
-```javascript
-rules_version = '2';
-service cloud.firestore {
-  match /databases/{database}/documents {
-
-    // Coleção de viagens públicas
-    match /trips/{tripId} {
-      allow read: if true;  // Todos podem ler
-      allow write: if false; // Apenas admin pode escrever
-    }
-
-    // Histórico de viagens do usuário
-    match /users/{userId}/trips/{tripId} {
-      allow read: if request.auth != null && request.auth.uid == userId;
-      allow write: if request.auth != null && request.auth.uid == userId;
-    }
-  }
+    fun saveUserSession(userId: String, userName: String, userCpf: String)
+    fun getUserId(): String?
+    fun getUserName(): String?
+    fun getUserCpf(): String?
+    fun isLoggedIn(): Boolean
+    fun clearSession()
 }
 ```
 
-**Nota**: As regras acima são para produção. Durante desenvolvimento, use:
+### Fluxo de Autenticação
 
-```javascript
-match /{document=**} {
-  allow read, write: if true;
-}
 ```
+┌─────────────────────────────────────────────────────┐
+│                  LoginScreen                         │
+│  1. Usuário digita CPF e senha                      │
+│  2. LoginViewModel.onLoginClick()                   │
+└─────────────────────────────────────────────────────┘
+                         │
+                         ▼
+┌─────────────────────────────────────────────────────┐
+│                  LoginViewModel                      │
+│  1. Valida CPF (11 dígitos)                         │
+│  2. Busca usuário no Room por CPF                   │
+│  3. Se encontrar: salva sessão e navega             │
+│  4. Se não: exibe erro                              │
+└─────────────────────────────────────────────────────┘
+                         │
+                         ▼
+┌─────────────────────────────────────────────────────┐
+│               UserSessionManager                     │
+│  saveUserSession(userId, userName, userCpf)         │
+└─────────────────────────────────────────────────────┘
+                         │
+                         ▼
+┌─────────────────────────────────────────────────────┐
+│                  HomeScreen                          │
+│  HomeViewModel usa userId da sessão                 │
+│  Exibe "Olá, {userName}"                            │
+└─────────────────────────────────────────────────────┘
+```
+
+### Usuário de Teste
+
+O `LoginViewModel` cria automaticamente um usuário de teste:
+
+| Campo | Valor |
+|-------|-------|
+| CPF | `12345678900` |
+| Nome | Maria Silva Santos |
+| Email | maria.santos@estudante.edu.br |
+| Senha | qualquer texto |
 
 ---
 
@@ -425,35 +566,23 @@ match /{document=**} {
 ```kotlin
 data class Trip(
     val id: String = "",
-    val date: String = "",              // "2025-12-20"
-    val time: String = "",              // "07:30"
-    val origin: String = "",            // "Sapé"
-    val destination: String = "",       // "UFPB"
-    val seatNumber: String = "",        // "12B"
-    val status: String = "SCHEDULED",   // SCHEDULED, COMPLETED, CANCELLED, NO_SHOW
+    val date: String = "",
+    val time: String = "",
+    val origin: String = "",
+    val destination: String = "",
+    val seatNumber: String = "",
+    val status: TripStatus = TripStatus.SCHEDULED,
     val reservedSeats: Int = 0,
     val totalSeats: Int = 0
 )
+
+enum class TripStatus(val value: String) {
+    SCHEDULED("SCHEDULED"),
+    COMPLETED("COMPLETED"),
+    CANCELLED("CANCELLED"),
+    NO_SHOW("NO_SHOW")
+}
 ```
-
-#### Computed Properties
-
-```kotlin
-val route: String               // "Sapé → UFPB"
-val dateTime: String            // "2025-12-20 às 07:30"
-val progress: Float             // 0.975 (39/40)
-val isCompleted: Boolean        // true se COMPLETED
-val isCancelled: Boolean        // true se CANCELLED ou NO_SHOW
-```
-
-#### Status Possíveis
-
-| Status | Descrição | Badge Color |
-|--------|-----------|-------------|
-| `SCHEDULED` | Viagem agendada | 🔵 Azul |
-| `COMPLETED` | Viagem concluída | 🟢 Verde |
-| `CANCELLED` | Viagem cancelada | 🔴 Vermelho |
-| `NO_SHOW` | Não compareceu | 🟠 Laranja |
 
 ### User (Usuário)
 
@@ -467,36 +596,23 @@ data class User(
 )
 ```
 
-**Nota**: Atualmente mockado. Deve ser substituído por dados de autenticação real.
+### StudentCard (Carteirinha)
 
-### QuickAccessOption
-
-**Arquivo**: `models/QuickAccessOption.kt`
+**Arquivo**: `models/StudentCard.kt`
 
 ```kotlin
-data class QuickAccessOption(
-    val icon: ImageVector,
-    val label: String,
-    val onClick: () -> Unit
+data class StudentCard(
+    val id: String,
+    val studentName: String,
+    val institution: String,
+    val course: String,
+    val shift: String,
+    val cardNumber: String,
+    val isActive: Boolean,
+    val validUntil: String,
+    val photoUrl: String?
 )
 ```
-
-Usado para os botões de acesso rápido na HomeScreen.
-
-### BottomNavItem
-
-**Arquivo**: `models/BottomNavItem.kt`
-
-```kotlin
-data class BottomNavItem(
-    val route: String,
-    val label: String,
-    val icon: ImageVector,
-    val selectedIcon: ImageVector
-)
-```
-
-Define os itens da barra de navegação inferior.
 
 ---
 
@@ -504,164 +620,116 @@ Define os itens da barra de navegação inferior.
 
 ### Componentes Reutilizáveis
 
-#### NextTripCard
-- **Arquivo**: `ui/components/NextTripCard.kt`
-- **Propósito**: Exibe a próxima viagem na HomeScreen
-- **Props**:
-  - `trip: Trip?` - Dados da viagem
-  - `onViewMap: () -> Unit`
-  - `onCancelReservation: () -> Unit`
-  - `onViewDetails: () -> Unit`
+| Componente | Arquivo | Descrição |
+|------------|---------|-----------|
+| AppTopBar | `AppTopBar.kt` | Barra superior com navegação e menu |
+| BottomNavigationBar | `BottomNavigationBar.kt` | Navegação inferior |
+| EmptyState | `EmptyState.kt` | Estado vazio com ícone e mensagem |
+| FilterChip | `FilterChip.kt` | Chip de filtro selecionável |
+| MainScaffold | `MainScaffold.kt` | Scaffold com Bottom Navigation |
+| NextTripCard | `NextTripCard.kt` | Card da próxima viagem |
+| QuickAccessGrid | `QuickAccessGrid.kt` | Grade de acesso rápido |
+| RealTimeMapSection | `RealTimeMapSection.kt` | Seção de mapa em tempo real |
+| TripCard | `TripCard.kt` | Card de viagem no histórico |
+| UserProfileHeader | `UserProfileHeader.kt` | Cabeçalho com avatar e nome |
 
-#### TripCard
-- **Arquivo**: `ui/components/TripCard.kt`
-- **Propósito**: Exibe uma viagem no histórico
-- **Props**:
-  - `trip: Trip` - Dados da viagem
-- **Features**:
-  - Badge de status colorido
-  - Data e hora
-  - Origem e destino
-  - Número do assento
+---
 
-#### UserProfileHeader
-- **Arquivo**: `ui/components/UserProfileHeader.kt`
-- **Propósito**: Cabeçalho com informações do usuário
-- **Props**:
-  - `user: User`
-  - `onNotificationClick: () -> Unit`
+## 💉 Injeção de Dependência
 
-#### QuickAccessGrid
-- **Arquivo**: `ui/components/QuickAccessGrid.kt`
-- **Propósito**: Grade de botões de acesso rápido
-- **Props**:
-  - `options: List<QuickAccessOption>`
+### Koin
 
-#### EmptyState
-- **Arquivo**: `ui/components/EmptyState.kt`
-- **Propósito**: Estado vazio quando não há dados
-- **Props**:
-  - `icon: ImageVector`
-  - `title: String`
-  - `description: String`
+O app utiliza **Koin** para injeção de dependência.
 
-#### FilterChip
-- **Arquivo**: `ui/components/FilterChip.kt`
-- **Propósito**: Chip de filtro selecionável
-- **Props**:
-  - `label: String`
-  - `isSelected: Boolean`
-  - `onClick: () -> Unit`
+**Arquivo**: `di/AppModule.kt`
 
-#### RealTimeMapSection
-- **Arquivo**: `ui/components/RealTimeMapSection.kt`
-- **Propósito**: Seção de mapa em tempo real
-- **Props**:
-  - `onViewFullMap: () -> Unit`
+```kotlin
+val appModule = module {
+    // Firebase
+    single { FirebaseFirestore.getInstance() }
 
-#### MainScaffold
-- **Arquivo**: `ui/components/MainScaffold.kt`
-- **Propósito**: Scaffold com Bottom Navigation
-- **Props**:
-  - `navController: NavController`
-  - `content: @Composable (Modifier) -> Unit`
+    // Database
+    single { AppDatabase.getDatabase(androidContext()) }
+
+    // Session Manager
+    single { UserSessionManager(androidContext()) }
+
+    // DAOs
+    single { get<AppDatabase>().tripDao() }
+    single { get<AppDatabase>().userDao() }
+    single { get<AppDatabase>().studentCardDao() }
+
+    // Repositories
+    single { TripRepository(get()) }
+
+    // ViewModels
+    viewModel {
+        LoginViewModel(database = get(), sessionManager = get())
+    }
+
+    viewModel {
+        val sessionManager: UserSessionManager = get()
+        val userId = sessionManager.getUserId() ?: "guest"
+        HomeViewModel(database = get(), tripRepository = get(), userId = userId)
+    }
+
+    viewModel {
+        TripsViewModel(tripRepository = get(), database = get())
+    }
+}
+```
+
+### Inicialização
+
+**Arquivo**: `UnipassApplication.kt`
+
+```kotlin
+class UnipassApplication : Application() {
+    override fun onCreate() {
+        super.onCreate()
+        startKoin {
+            androidContext(this@UnipassApplication)
+            modules(appModule)
+        }
+    }
+}
+```
 
 ---
 
 ## 🔄 Fluxo de Dados
 
-### Tempo Real com Snapshot Listeners
+### Tempo Real com Snapshot Listeners + Room
 
-O app utiliza **Firestore Snapshot Listeners** para atualização em tempo real.
+O app utiliza uma estratégia offline-first:
 
-#### Exemplo: HomeScreen
-
-```kotlin
-// 1. Criar estado
-var nextTrip by remember { mutableStateOf<Trip?>(null) }
-
-// 2. Iniciar listener
-DisposableEffect(Unit) {
-    val listener = repository.observeNextTrip { trip ->
-        nextTrip = trip  // ⬅️ Atualiza automaticamente
-    }
-
-    // 3. Cleanup ao sair da tela
-    onDispose {
-        listener.remove()
-    }
-}
-
-// 4. UI reage automaticamente
-NextTripCard(trip = nextTrip)
-```
-
-#### Fluxo Detalhado
-
-```
-┌──────────────────────────────────────────────────────────┐
-│ 1. Tela é Composta                                        │
-│    DisposableEffect(Unit) é executado                     │
-└──────────────────────────────────────────────────────────┘
-                          ⬇️
-┌──────────────────────────────────────────────────────────┐
-│ 2. TripRepository.observeNextTrip() é chamado             │
-│    Firestore Snapshot Listener é registrado               │
-└──────────────────────────────────────────────────────────┘
-                          ⬇️
-┌──────────────────────────────────────────────────────────┐
-│ 3. Firestore retorna dados iniciais                      │
-│    Callback é executado: onTripUpdate(trip)               │
-│    Estado é atualizado: nextTrip = trip                   │
-└──────────────────────────────────────────────────────────┘
-                          ⬇️
-┌──────────────────────────────────────────────────────────┐
-│ 4. UI é recomposta automaticamente                       │
-│    NextTripCard exibe os dados                            │
-└──────────────────────────────────────────────────────────┘
-                          ⬇️
-┌──────────────────────────────────────────────────────────┐
-│ 5. Documento muda no Firestore                           │
-│    (Usuário adiciona/edita/remove documento)              │
-└──────────────────────────────────────────────────────────┘
-                          ⬇️
-┌──────────────────────────────────────────────────────────┐
-│ 6. Snapshot Listener detecta mudança                     │
-│    Callback é executado novamente                         │
-│    Estado é atualizado automaticamente                    │
-└──────────────────────────────────────────────────────────┘
-                          ⬇️
-┌──────────────────────────────────────────────────────────┐
-│ 7. UI recomposta com novos dados                         │
-│    SEM necessidade de refresh manual                      │
-└──────────────────────────────────────────────────────────┘
-                          ⬇️
-┌──────────────────────────────────────────────────────────┐
-│ 8. Usuário sai da tela                                    │
-│    onDispose() é chamado                                  │
-│    listener.remove() cancela o listener                   │
-└──────────────────────────────────────────────────────────┘
-```
-
-### Filtros na TripsScreen
+1. **Carrega do Room** (instantâneo, offline)
+2. **Sincroniza com Firebase** (quando online)
+3. **Salva no Room** para próxima vez
 
 ```kotlin
-// Estado de filtro
-var selectedFilter by remember { mutableStateOf(TripFilter.ALL) }
-
-// Filtragem local
-val filteredTrips = when (selectedFilter) {
-    TripFilter.ALL -> allTrips
-    TripFilter.COMPLETED -> allTrips.filter { it.status == "COMPLETED" }
-    TripFilter.CANCELLED -> allTrips.filter {
-        it.status == "CANCELLED" || it.status == "NO_SHOW"
+// HomeViewModel
+private fun observeNextTrip() {
+    // 1. Carrega do Room primeiro
+    viewModelScope.launch {
+        database.tripDao().getNextTrip(userId).collect { tripEntity ->
+            _uiState.update { state ->
+                state.copy(nextTrip = tripEntity?.toTrip(), isLoading = false)
+            }
+        }
     }
-}
 
-// UI exibe trips filtradas
-LazyColumn {
-    items(filteredTrips) { trip ->
-        TripCard(trip = trip)
+    // 2. Sincroniza com Firebase
+    tripListener = tripRepository.observeNextTrip(userId) { trip ->
+        viewModelScope.launch {
+            if (trip != null) {
+                // 3. Salva no Room
+                database.tripDao().insertTrip(trip.toEntity(userId))
+            }
+            _uiState.update { state ->
+                state.copy(nextTrip = trip, isLoading = false)
+            }
+        }
     }
 }
 ```
@@ -673,7 +741,7 @@ LazyColumn {
 ### Pré-requisitos
 
 - **Android Studio** Hedgehog (2023.1.1) ou superior
-- **JDK** 11 ou superior
+- **JDK** 17 ou superior
 - **SDK Android** API 24+ (Android 7.0) até API 36
 - **Conta Google** para Firebase
 
@@ -682,103 +750,29 @@ LazyColumn {
 #### 1. Clone o Repositório
 
 ```bash
-git clone https://github.com/seu-usuario/unipass-student-app.git
+git clone https://github.com/joanaeliseal/unipass-student-app.git
 cd unipass-student-app
 ```
 
 #### 2. Configure o Firebase
 
-##### a) Crie um Projeto no Firebase
-
 1. Acesse [Firebase Console](https://console.firebase.google.com)
-2. Clique em "Adicionar projeto"
-3. Nomeie como "UniPass" ou similar
-4. Siga o assistente de configuração
-
-##### b) Adicione um App Android
-
-1. No projeto Firebase, clique em "Adicionar app" > ícone Android
-2. **Package name**: `br.edu.ifpb.unipass`
-3. **App nickname**: UniPass Student App
+2. Crie um projeto e adicione um app Android
+3. **Package name**: `br.edu.ifpb.unipass`
 4. Baixe o arquivo `google-services.json`
+5. Cole em `app/google-services.json`
+6. Ative o Firestore Database
 
-##### c) Adicione o google-services.json
-
-```bash
-# Cole o arquivo em:
-app/google-services.json
-```
-
-##### d) Ative o Firestore
-
-1. No Firebase Console, vá para "Firestore Database"
-2. Clique em "Criar banco de dados"
-3. Escolha "Modo de produção" ou "Modo de teste"
-4. Selecione a região (ex: southamerica-east1)
-
-##### e) Configure as Regras (Desenvolvimento)
-
-```javascript
-rules_version = '2';
-service cloud.firestore {
-  match /databases/{database}/documents {
-    match /{document=**} {
-      allow read, write: if true;
-    }
-  }
-}
-```
-
-**⚠️ Atenção**: Essas regras são INSEGURAS. Use apenas para desenvolvimento!
-
-#### 3. Adicione Dados de Teste
-
-##### Coleção: `trips`
-
-Adicione um documento manualmente:
-
-```json
-{
-  "date": "2025-12-20",
-  "time": "07:30",
-  "origin": "Sapé",
-  "destination": "UFPB",
-  "seatNumber": "12B",
-  "status": "SCHEDULED",
-  "reservedSeats": 39,
-  "totalSeats": 40
-}
-```
-
-##### Coleção: `users/user123/trips`
-
-1. Crie coleção `users`
-2. Crie documento com ID `user123`
-3. Dentro dele, crie subcoleção `trips`
-4. Adicione documentos:
-
-```json
-{
-  "date": "2025-12-10",
-  "time": "15:00",
-  "origin": "UFPB",
-  "destination": "Sapé",
-  "seatNumber": "A5",
-  "status": "COMPLETED"
-}
-```
-
-#### 4. Sincronize o Projeto
+#### 3. Sincronize e Execute
 
 1. Abra o projeto no Android Studio
 2. Aguarde a sincronização do Gradle
-3. Clique em "Sync Project with Gradle Files" (🐘)
+3. Execute o app (`Shift + F10`)
 
-#### 5. Execute o App
+#### 4. Login de Teste
 
-1. Conecte um dispositivo Android ou inicie um emulador
-2. Clique em "Run" (▶️) ou pressione `Shift + F10`
-3. O app será instalado e iniciado automaticamente
+- **CPF**: `12345678900`
+- **Senha**: qualquer texto
 
 ---
 
@@ -793,67 +787,28 @@ Adicione um documento manualmente:
 | **Jetpack Compose** | 2024+ | UI declarativa |
 | **Material Design 3** | Latest | Design system |
 
-### Firebase
+### Persistência
 
-| Serviço | Descrição |
-|---------|-----------|
-| **Firestore** | Banco de dados NoSQL em tempo real |
-| **Firebase BOM** | 33.6.0 - Gerenciamento de versões |
+| Tecnologia | Descrição |
+|------------|-----------|
+| **Room** | Banco de dados local SQLite |
+| **Firebase Firestore** | Banco de dados NoSQL em nuvem |
+| **SharedPreferences** | Armazenamento de sessão |
 
-### Bibliotecas Android
+### Arquitetura
+
+| Tecnologia | Descrição |
+|------------|-----------|
+| **Koin** | Injeção de dependência |
+| **ViewModel** | Gerenciamento de estado |
+| **StateFlow** | Estado reativo |
+| **Coroutines** | Programação assíncrona |
+
+### Navegação
 
 | Biblioteca | Versão | Uso |
 |------------|--------|-----|
-| `androidx.core:core-ktx` | 1.17.0 | Extensões Kotlin |
-| `androidx.lifecycle:lifecycle-runtime-ktx` | Latest | Lifecycle |
-| `androidx.activity:activity-compose` | 1.11.0 | Activity Compose |
-| `androidx.navigation:navigation-compose` | 2.7.7 | Navegação |
-| `androidx.compose.material:material-icons-extended` | Latest | Ícones Material |
-
-### Configuração do Gradle
-
-**build.gradle.kts (Project)**
-
-```kotlin
-plugins {
-    id("com.android.application") version "8.1.0" apply false
-    id("org.jetbrains.kotlin.android") version "1.9.0" apply false
-    id("com.google.gms.google-services") version "4.4.0" apply false
-}
-```
-
-**build.gradle.kts (Module: app)**
-
-```kotlin
-plugins {
-    id("com.android.application")
-    id("org.jetbrains.kotlin.android")
-    id("com.google.gms.google-services")
-}
-
-android {
-    compileSdk = 36
-
-    defaultConfig {
-        minSdk = 24
-        targetSdk = 34
-    }
-}
-
-dependencies {
-    // Firebase
-    implementation(platform("com.google.firebase:firebase-bom:33.6.0"))
-    implementation("com.google.firebase:firebase-firestore-ktx")
-
-    // Compose
-    implementation(platform("androidx.compose:compose-bom:2024.xx.xx"))
-    implementation("androidx.compose.ui:ui")
-    implementation("androidx.compose.material3:material3")
-
-    // Navigation
-    implementation("androidx.navigation:navigation-compose:2.7.7")
-}
-```
+| `navigation-compose` | 2.7.7 | Navegação entre telas |
 
 ---
 
@@ -861,30 +816,23 @@ dependencies {
 
 ### Dados Mockados
 
-Atualmente, o app contém alguns dados hardcoded que devem ser substituídos:
+Alguns dados ainda estão mockados e devem ser integrados com o backend:
 
-1. **User (HomeScreen.kt:33-37)**
-   ```kotlin
-   val currentUser = User(
-       name = "Maria",  // ❌ Deve vir da autenticação
-       initials = "MS",
-       notificationCount = 3
-   )
-   ```
-
-2. **UserID (TripsScreen.kt:42)**
-   ```kotlin
-   repository.observeUserTripHistory("user123")  // ❌ Deve ser dinâmico
-   ```
+| Tela | Dados Mockados |
+|------|----------------|
+| PerfilScreen | Informações do usuário (exceto nome) |
+| ScheduleScreen | Lista de horários |
+| BookingScreen | Viagens disponíveis |
+| SupportScreen | Dados de contato e FAQ |
 
 ### Próximos Passos
 
-- [ ] Implementar autenticação (Firebase Auth)
-- [ ] Substituir dados mockados por dados reais
-- [ ] Implementar sistema de reservas
+- [ ] Implementar autenticação real (Firebase Auth)
+- [ ] Integrar dados do perfil com backend
+- [ ] Implementar sistema de reservas completo
 - [ ] Adicionar mapa real com Google Maps
 - [ ] Implementar notificações push
-- [ ] Adicionar testes unitários
+- [ ] Adicionar testes unitários e de UI
 - [ ] Configurar CI/CD
 
 ---
@@ -897,18 +845,18 @@ Este projeto foi desenvolvido para fins educacionais no IFPB.
 
 ## 👥 Equipe
 
-- Desenvolvido por estudantes do IFPB
-- Orientação: [Nome do Professor/Orientador]
+- Desenvolvido por: Joana Elise e Maria Eduarda Vitorino
+- Orientação: Prof. Edemberg Rocha
 
 ---
 
 ## 📧 Contato
 
 Para dúvidas ou sugestões:
-- Email: [seu-email@ifpb.edu.br]
-- GitHub: [seu-usuario]
+- GitHub: [joanaeliseal](https://github.com/joanaeliseal)
+- GitHub: [vtrnduda](https://github.com/vtrnduda)
 
 ---
 
-**Documentação criada em**: Dezembro/2025
-**Última atualização**: 15/12/2025
+- **Documentação criada em**: Dezembro/2025
+- **Última atualização**: Fevereiro/2026

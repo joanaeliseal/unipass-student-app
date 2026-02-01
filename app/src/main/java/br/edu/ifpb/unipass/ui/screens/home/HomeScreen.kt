@@ -22,6 +22,7 @@ import br.edu.ifpb.unipass.models.QuickAccessOption
 import br.edu.ifpb.unipass.models.Trip
 import br.edu.ifpb.unipass.models.User
 import br.edu.ifpb.unipass.navigation.Routes
+import br.edu.ifpb.unipass.ui.viewmodel.HomeViewModel
 import br.edu.ifpb.unipass.ui.components.NextTripCard
 import br.edu.ifpb.unipass.ui.components.QuickAccessGrid
 import br.edu.ifpb.unipass.ui.components.RealTimeMapSection
@@ -41,17 +42,17 @@ fun HomeScreen(navController: NavController, modifier: Modifier = Modifier) {
         QuickAccessOption(
             icon = Icons.Filled.AccessTime,
             label = "Horários",
-            onClick = { }
+            onClick = { navController.navigate(Routes.HORARIOS) }
         ),
         QuickAccessOption(
             icon = Icons.AutoMirrored.Filled.List,
             label = "Histórico",
-            onClick = { }
+            onClick = { navController.navigate(Routes.VIAGENS) }
         ),
         QuickAccessOption(
             icon = Icons.Filled.HeadsetMic,
             label = "Suporte",
-            onClick = { }
+            onClick = { navController.navigate(Routes.SUPORTE) }
         )
     )
 
@@ -65,7 +66,7 @@ fun HomeScreen(navController: NavController, modifier: Modifier = Modifier) {
     } else {
         HomeContent(
             modifier = modifier,
-            user = uiState.currentUser,
+            user = uiState.user,
             trip = uiState.nextTrip,
             quickAccessOptions = quickAccessOptions,
             onNotificationClick = { },
@@ -80,7 +81,7 @@ fun HomeScreen(navController: NavController, modifier: Modifier = Modifier) {
 @Composable
 private fun HomeContent(
     modifier: Modifier = Modifier,
-    user: User,
+    user: User?,
     trip: Trip?,
     quickAccessOptions: List<QuickAccessOption>,
     onNotificationClick: () -> Unit,
@@ -100,7 +101,7 @@ private fun HomeContent(
         Spacer(modifier = Modifier.height(10.dp))
 
         UserProfileHeader(
-            user = user,
+            user = user ?: User(name = "Estudante", initials = "ES", notificationCount = 0),
             onNotificationClick = onNotificationClick
         )
 

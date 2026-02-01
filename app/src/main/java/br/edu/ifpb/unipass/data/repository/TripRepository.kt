@@ -65,7 +65,7 @@ class TripRepository(
         }
     }
 
-    fun observeNextTrip(onTripUpdate: String, function: () -> ERROR): ListenerRegistration {
+    fun observeNextTrip(userId: String, onTripUpdate: (Trip?) -> Unit): ListenerRegistration {
         Log.d(TAG, "Iniciando listener de próxima viagem em tempo real")
 
         return firestore.collection("trips")

@@ -10,7 +10,7 @@ import br.edu.ifpb.unipass.ui.screens.home.HomeScreen
 import br.edu.ifpb.unipass.ui.screens.login.LoginScreen
 import br.edu.ifpb.unipass.ui.screens.profile.PerfilScreen
 import br.edu.ifpb.unipass.ui.screens.trips.ViagensScreen
-import br.edu.ifpb.unipass.ui.screens.reserva.ReservaViagemScreen
+import br.edu.ifpb.unipass.ui.screens.booking.ReservaViagemScreen
 import br.edu.ifpb.unipass.ui.screens.schedule.ScheduleScreen
 import br.edu.ifpb.unipass.ui.screens.support.SupportScreen
 
