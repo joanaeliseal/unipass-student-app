@@ -5,9 +5,12 @@ import br.edu.ifpb.unipass.data.local.entity.TripEntity
 import br.edu.ifpb.unipass.data.local.entity.UserEntity
 import br.edu.ifpb.unipass.models.StudentCard
 import br.edu.ifpb.unipass.models.Trip
+import br.edu.ifpb.unipass.models.TripStatus
 import br.edu.ifpb.unipass.models.User
 
 // Trip Mappers
+
+// Converte TripEntity (Room) para Trip (Model)
 fun TripEntity.toTrip(): Trip {
     return Trip(
         id = this.id,
@@ -16,12 +19,13 @@ fun TripEntity.toTrip(): Trip {
         origin = this.origin,
         destination = this.destination,
         seatNumber = this.seatNumber,
-        status = this.status,
+        status = TripStatus.fromValue(this.status),
         reservedSeats = this.reservedSeats,
         totalSeats = this.totalSeats
     )
 }
 
+// Converte Trip (Model) para TripEntity (Room)
 fun Trip.toEntity(userId: String): TripEntity {
     return TripEntity(
         id = this.id,
@@ -30,7 +34,7 @@ fun Trip.toEntity(userId: String): TripEntity {
         origin = this.origin,
         destination = this.destination,
         seatNumber = this.seatNumber,
-        status = this.status,
+        status = this.status.value,
         reservedSeats = this.reservedSeats,
         totalSeats = this.totalSeats,
         userId = userId
@@ -64,6 +68,7 @@ fun User.toEntity(id: String, cpf: String, email: String = ""): UserEntity {
 // StudentCard Mappers
 fun StudentCardEntity.toStudentCard(): StudentCard {
     return StudentCard(
+        id = this.id,
         studentName = this.studentName,
         institution = this.institution,
         course = this.course,
@@ -75,9 +80,9 @@ fun StudentCardEntity.toStudentCard(): StudentCard {
     )
 }
 
-fun StudentCard.toEntity(id: String, userId: String): StudentCardEntity {
+fun StudentCard.toEntity(userId: String): StudentCardEntity {
     return StudentCardEntity(
-        id = id,
+        id = this.id,
         userId = userId,
         studentName = this.studentName,
         institution = this.institution,

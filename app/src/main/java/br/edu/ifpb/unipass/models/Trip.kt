@@ -19,7 +19,7 @@ data class Trip(
     val origin: String = "",
     val destination: String = "",
     val seatNumber: String = "",
-    val status: String = TripStatus.SCHEDULED,
+    val status: TripStatus = TripStatus.SCHEDULED,
     val reservedSeats: Int = 0,
     val totalSeats: Int = 0
 ) {
