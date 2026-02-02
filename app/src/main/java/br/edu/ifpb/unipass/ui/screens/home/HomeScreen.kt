@@ -15,12 +15,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import org.koin.androidx.compose.koinViewModel
 import androidx.navigation.NavController
 import br.edu.ifpb.unipass.models.QuickAccessOption
 import br.edu.ifpb.unipass.models.Trip
 import br.edu.ifpb.unipass.models.User
 import br.edu.ifpb.unipass.navigation.Routes
-import br.edu.ifpb.unipass.repository.TripRepository
+import br.edu.ifpb.unipass.ui.viewmodel.HomeViewModel
 import br.edu.ifpb.unipass.ui.components.NextTripCard
 import br.edu.ifpb.unipass.ui.components.QuickAccessGrid
 import br.edu.ifpb.unipass.ui.components.RealTimeMapSection
@@ -28,32 +30,8 @@ import br.edu.ifpb.unipass.ui.components.UserProfileHeader
 
 @Composable
 fun HomeScreen(navController: NavController, modifier: Modifier = Modifier) {
-    val repository = remember { TripRepository() }
-
-    val currentUser = User(
-        name = "Maria",
-        initials = "MS",
-        notificationCount = 3
-    )
-
-    var nextTrip by remember { mutableStateOf<Trip?>(null) }
-    var isLoading by remember { mutableStateOf(true) }
-
-    // Observar próxima viagem em tempo real
-    DisposableEffect(Unit) {
-        android.util.Log.d("HomeScreen", "=== Iniciando observação em tempo real ===")
-
-        val listener = repository.observeNextTrip { trip ->
-            nextTrip = trip
-            isLoading = false
-            android.util.Log.d("HomeScreen", "Dados atualizados: ${trip?.route ?: "nenhuma"}")
-        }
-
-        onDispose {
-            android.util.Log.d("HomeScreen", "Removendo listener de tempo real")
-            listener.remove()
-        }
-    }
+    val viewModel: HomeViewModel = koinViewModel()
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     val quickAccessOptions = listOf(
         QuickAccessOption(
@@ -64,21 +42,21 @@ fun HomeScreen(navController: NavController, modifier: Modifier = Modifier) {
         QuickAccessOption(
             icon = Icons.Filled.AccessTime,
             label = "Horários",
-            onClick = { }
+            onClick = { navController.navigate(Routes.HORARIOS) }
         ),
         QuickAccessOption(
             icon = Icons.AutoMirrored.Filled.List,
             label = "Histórico",
-            onClick = { }
+            onClick = { navController.navigate(Routes.VIAGENS) }
         ),
         QuickAccessOption(
             icon = Icons.Filled.HeadsetMic,
             label = "Suporte",
-            onClick = { }
+            onClick = { navController.navigate(Routes.SUPORTE) }
         )
     )
 
-    if (isLoading) {
+    if (uiState.isLoading) {
         Box(
             modifier = modifier.fillMaxSize(),
             contentAlignment = Alignment.Center
@@ -88,8 +66,8 @@ fun HomeScreen(navController: NavController, modifier: Modifier = Modifier) {
     } else {
         HomeContent(
             modifier = modifier,
-            user = currentUser,
-            trip = nextTrip,
+            user = uiState.user,
+            trip = uiState.nextTrip,
             quickAccessOptions = quickAccessOptions,
             onNotificationClick = { },
             onViewTripDetails = { },
@@ -103,7 +81,7 @@ fun HomeScreen(navController: NavController, modifier: Modifier = Modifier) {
 @Composable
 private fun HomeContent(
     modifier: Modifier = Modifier,
-    user: User,
+    user: User?,
     trip: Trip?,
     quickAccessOptions: List<QuickAccessOption>,
     onNotificationClick: () -> Unit,
@@ -123,7 +101,7 @@ private fun HomeContent(
         Spacer(modifier = Modifier.height(10.dp))
 
         UserProfileHeader(
-            user = user,
+            user = user ?: User(name = "Estudante", initials = "ES", notificationCount = 0),
             onNotificationClick = onNotificationClick
         )
 
@@ -139,4 +117,3 @@ private fun HomeContent(
         RealTimeMapSection(onViewFullMap = onViewFullMap)
     }
 }
-

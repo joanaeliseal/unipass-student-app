@@ -20,13 +20,14 @@ import br.edu.ifpb.unipass.ui.components.StudentCardView
 @Composable
 fun StudentCardScreen(navController: NavController, modifier: Modifier = Modifier) {
     val studentCard = StudentCard(
-        studentName = "JOÃO DA SILVA SANTOS",
-        institution = "UFPB - Campus I",
+        id = "1",
+        studentName = "MARIA SILVA SANTOS",
+        institution = "IFPB - Campus João Pessoa",
         course = "Engenharia de Software",
         shift = "Noturno",
         cardNumber = "2025001234",
         isActive = true,
-        validUntil = "31/12/2025"
+        validUntil = "31/12/2026"
     )
 
     StudentCardContent(

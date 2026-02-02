@@ -7,4 +7,6 @@ object Routes {
     const val RESERVA = "reserva"
     const val CARTEIRINHA = "carteirinha"
     const val PERFIL = "perfil"
+    const val HORARIOS = "horarios"
+    const val SUPORTE = "suporte"
 }

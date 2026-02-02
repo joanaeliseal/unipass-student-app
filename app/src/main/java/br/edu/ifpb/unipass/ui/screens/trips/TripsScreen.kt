@@ -1,77 +1,44 @@
 package br.edu.ifpb.unipass.ui.screens.trips
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.DirectionsBus
-import androidx.compose.ui.Alignment
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import org.koin.androidx.compose.koinViewModel
 import androidx.navigation.NavController
 import br.edu.ifpb.unipass.models.Trip
-import br.edu.ifpb.unipass.repository.TripRepository
 import br.edu.ifpb.unipass.ui.components.AppTopBar
 import br.edu.ifpb.unipass.ui.components.EmptyState
 import br.edu.ifpb.unipass.ui.components.FilterChip
 import br.edu.ifpb.unipass.ui.components.TripCard
 
-enum class TripFilter {
-    ALL, COMPLETED, CANCELLED
-}
-
 @Composable
 fun TripsScreen(navController: NavController, modifier: Modifier = Modifier) {
-    val repository = remember { TripRepository() }
+    val viewModel: TripsViewModel = koinViewModel()
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
-    var selectedFilter by remember { mutableStateOf(TripFilter.ALL) }
-    var allTrips by remember { mutableStateOf<List<Trip>>(emptyList()) }
-    var isLoading by remember { mutableStateOf(true) }
-
-    // Observar histórico de viagens em tempo real
-    DisposableEffect(Unit) {
-        android.util.Log.d("TripsScreen", "=== Iniciando observação em tempo real ===")
-
-        // TODO: Substituir "user123" pelo ID do usuário logado
-        val listener = repository.observeUserTripHistory("user123") { trips ->
-            allTrips = trips
-            isLoading = false
-            android.util.Log.d("TripsScreen", "Dados atualizados: ${trips.size} viagens")
-        }
-
-        onDispose {
-            android.util.Log.d("TripsScreen", "Removendo listener de tempo real")
-            listener.remove()
-        }
-    }
-
-    val filteredTrips = when (selectedFilter) {
-        TripFilter.ALL -> allTrips
-        TripFilter.COMPLETED -> allTrips.filter { it.status == "COMPLETED" }
-        TripFilter.CANCELLED -> allTrips.filter {
-            it.status == "CANCELLED" || it.status == "NO_SHOW"
-        }
-    }
-
-    if (isLoading) {
+    if (uiState.isLoading) {
         Box(
             modifier = modifier.fillMaxSize(),
-            contentAlignment = androidx.compose.ui.Alignment.Center
+            contentAlignment = Alignment.Center
         ) {
             CircularProgressIndicator()
         }
     } else {
         TripsContent(
             modifier = modifier,
-            trips = filteredTrips,
-            selectedFilter = selectedFilter,
-            onFilterChange = { selectedFilter = it }
+            trips = uiState.filteredTrips,
+            selectedFilter = uiState.selectedFilter,
+            onFilterChange = viewModel::onFilterSelected
         )
     }
 }
